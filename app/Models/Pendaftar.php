@@ -61,8 +61,20 @@ class Pendaftar extends Model
         return $this->status_kelengkapan === 'lengkap' ? 'LENGKAP' : 'BELUM LENGKAP';
     }
 
-    public function getFotoUrlAttribute(): string
+    public function getFotoUrlAttribute(): ?string
     {
-        return $this->foto ? asset('storage/' . $this->foto) : asset('images/default-avatar.png');
+        return $this->foto ? asset('storage/' . $this->foto) : null;
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $words = preg_split('/\s+/', trim($this->nama)) ?: [];
+        $initials = collect($words)
+            ->filter()
+            ->take(2)
+            ->map(fn ($word) => mb_strtoupper(mb_substr($word, 0, 1)))
+            ->implode('');
+
+        return $initials ?: 'P';
     }
 }

@@ -10,7 +10,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::query()->updateOrCreate(
+        User::withTrashed()->updateOrCreate(
             ['email' => 'admin@pendaftaran.test'],
             [
                 'name' => 'Admin Pendaftaran',
@@ -21,10 +21,26 @@ class UserSeeder extends Seeder
                 'status' => 'Active',
                 'last_active_at' => now(),
                 'terms_agreed' => true,
+                'deleted_at' => null,
             ],
         );
 
-        if (User::where('email', '!=', 'admin@pendaftaran.test')->count() === 0) {
+        User::withTrashed()->updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'admin',
+                'phone_number' => '081234567891',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'status' => 'Active',
+                'last_active_at' => now(),
+                'terms_agreed' => true,
+                'deleted_at' => null,
+            ],
+        );
+
+        if (User::whereNotIn('email', ['admin@pendaftaran.test', 'admin@gmail.com'])->count() === 0) {
             User::factory(12)->activeUser()->create();
 
             User::factory(4)->create([

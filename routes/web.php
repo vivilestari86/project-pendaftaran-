@@ -37,10 +37,11 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin')->name('admin.')->middleware('is.admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/export-excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export-excel');
         Route::get('/pendaftar/{pendaftar}/detail', [DashboardController::class, 'detail'])->name('pendaftar.detail');
-        Route::get('/pendaftar/{pendaftar}/edit-form', [DashboardController::class, 'editForm'])->name('pendaftar.edit-form');
-        Route::put('/pendaftar/{pendaftar}/update', [DashboardController::class, 'update'])->name('pendaftar.update');
 
-        Route::resource('manage-users', ManageUserController::class)->except(['show']);
+        Route::post('/manage-users/{manage_user}/verify', [ManageUserController::class, 'verify'])->name('manage-users.verify');
+        Route::get('/manage-users/{manage_user}/documents/{document}', [ManageUserController::class, 'showDocument'])->name('manage-users.documents.show');
+        Route::resource('manage-users', ManageUserController::class)->except(['show', 'create', 'store']);
     });
 });

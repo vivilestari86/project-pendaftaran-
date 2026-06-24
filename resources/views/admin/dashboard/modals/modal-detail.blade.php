@@ -14,11 +14,8 @@
         </div>
 
         <div class="modal-footer">
-            <button type="button" class="btn-outline modal-close" style="flex:1;">
+            <button type="button" class="btn-outline modal-footer-close">
                 Tutup
-            </button>
-            <button type="button" class="btn-primary modal-edit-btn" style="flex:1;">
-                Edit Data
             </button>
         </div>
     </div>

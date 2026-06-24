@@ -22,6 +22,7 @@ class User extends Authenticatable
         'status',
         'last_active_at',
         'phone_number',
+        'profile_photo',
         'terms_agreed',
     ];
 
@@ -47,6 +48,11 @@ class User extends Authenticatable
     public function isUser(): bool
     {
         return $this->role === 'user';
+    }
+
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        return $this->profile_photo ? asset($this->profile_photo) : null;
     }
 
     public function documents(): HasMany

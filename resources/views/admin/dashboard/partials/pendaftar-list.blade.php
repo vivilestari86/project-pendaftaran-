@@ -1,42 +1,32 @@
-{{-- resources/views/admin/dasboard/partials/pendaftar-list.blade.php --}}
-
-<div class="panel">
+<div class="panel panel-list">
     <div class="panel-header">
-        <div class="panel-title">Pendaftar Terbaru</div>
-        <span style="font-size:12px;color:var(--color-text-muted);">🔄 Status pendaftar masuk terkini</span>
+        <div>
+            <div class="panel-title">Pendaftar Terbaru</div>
+            <div class="panel-subtitle">Status pendaftaran masuk terakhir</div>
+        </div>
     </div>
 
     <div class="pendaftar-list">
         @forelse ($pendaftarTerbaru as $p)
             <div class="pendaftar-item"
                  data-id="{{ $p->id }}"
-                 data-detail-url="{{ route('admin.pendaftar.detail', $p->id) }}"
-                 data-edit-url="{{ route('admin.pendaftar.edit-form', $p->id) }}">
-                
-                <img src="{{ $p->foto_url }}"
-                     alt="{{ $p->nama }}"
-                     class="pendaftar-avatar">
+                 data-detail-url="{{ route('admin.pendaftar.detail', $p->id) }}">
+                <div class="pendaftar-avatar avatar-{{ $p->badge_color }}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
 
                 <div class="pendaftar-info">
                     <p class="pendaftar-nama">{{ $p->nama }}</p>
-                    <p class="pendaftar-meta">
-                        {{ $p->profesi ?? '-' }} • {{ $p->id_pendaftar }}
-                        <span class="badge badge-{{ $p->badge_color }}">
-                            {{ $p->status_label }}
-                        </span>
-                    </p>
+                    <p class="pendaftar-meta">{{ $p->profesi ?? '-' }} - ID: {{ $p->id_pendaftar }}</p>
+                    <span class="badge badge-{{ $p->badge_color }}">{{ $p->status_label }}</span>
                 </div>
 
                 <span class="pendaftar-time">{{ $p->waktu_relatif }}</span>
             </div>
         @empty
-            <p style="color:var(--color-text-muted); font-size:13px; text-align:center; padding:20px 0;">
-                📭 Belum ada pendaftar
-            </p>
+            <p class="empty-state">Belum ada pendaftar</p>
         @endforelse
     </div>
 
-    <button type="button" class="btn-outline" style="width:100%; margin-top:14px; color:var(--color-primary);">
-        Lihat Semua Pendaftar →
-    </button>
+    <button type="button" class="panel-link-button" id="openAllPendaftarModal">Lihat Semua Pendaftar</button>
 </div>

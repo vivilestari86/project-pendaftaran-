@@ -1,27 +1,22 @@
-{{-- resources/views/admin/dasboard/partials/kapasitas-pendaftaran.blade.php --}}
-
 <div class="panel">
-    <div class="panel-header">
-        <div class="panel-title">Kapasitas Pendaftaran</div>
-        <span style="font-size:13px;font-weight:700;color:var(--color-primary);">
-            {{ $persentaseKuota }}% Kuota
-        </span>
+    <div class="panel-header compact">
+        <div>
+            <div class="panel-title">Kapasitas Pendaftaran</div>
+            <div class="panel-subtitle">Pemakaian kuota pendaftaran</div>
+        </div>
     </div>
 
     <div class="kuota-bar-track">
-        <div class="kuota-bar-fill" style="width: {{ $persentaseKuota }}%;"></div>
+        <div class="kuota-bar-fill" style="width: {{ min($persentaseKuota, 100) }}%;"></div>
     </div>
 
     <div class="kuota-info">
-        <span>Terpenuhi: {{ number_format($totalPendaftar, 0, ',', '.') }}</span>
-        <span>Total Kuota: {{ number_format($kuotaTotal, 0, ',', '.') }}</span>
+        <span>{{ $persentaseKuota }}% Kuota Terpenuhi</span>
+        <span>{{ number_format($totalPendaftar, 0, ',', '.') }} / {{ number_format($kuotaTotal, 0, ',', '.') }}</span>
     </div>
 
     <div class="insight-box">
-        💡
-        <span>
-            Insight: Data pendaftaran sedang meningkat pesat. Pastikan tim verifikasi siap untuk
-            menangani lonjakan data minggu depan.
-        </span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <span>Data pendaftaran sedang mengalami peningkatan. Pastikan tim verifikasi siap menangani lonjakan data.</span>
     </div>
 </div>
