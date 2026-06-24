@@ -84,6 +84,21 @@
                         @enderror
                     </div>
 
+                    <!-- Profesi -->
+                    <div class="form-group">
+                        <label for="profesi">Profesi</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">💼</span>
+                            <input type="text" id="profesi" name="profesi"
+                                placeholder="Dokter / Perawat / Bidan"
+                                value="{{ old('profesi') }}"
+                                required>
+                        </div>
+                        @error('profesi')
+                            <span style="font-size: 12px; color: #dc3545;">{{ $message }}</span>
+                        @enderror
+                    </div>
+
                     <!-- Email -->
                     <div class="form-group">
                         <label for="email">Email Address</label>

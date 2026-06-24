@@ -101,7 +101,6 @@ a {
 
 .sidebar-bottom {
     padding: 28px 38px 34px;
-    border-top: 1px solid #cfd2db;
 }
 
 .logout-btn {
@@ -239,6 +238,11 @@ a {
     background: #fff;
 }
 
+.document-card-wide {
+    min-height: 240px;
+    grid-column: 1 / -1;
+}
+
 .document-card-top {
     display: flex;
     align-items: flex-start;
@@ -305,7 +309,7 @@ a {
     gap: 8px;
     color: #087443;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 400;
     word-break: break-word;
 }
 
@@ -320,7 +324,7 @@ a {
     background: #eef2ff;
     color: #263b91;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 400;
     word-break: break-word;
 }
 
@@ -338,8 +342,7 @@ a {
 
 .selected-file a {
     color: inherit;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration: none;
 }
 
 .selected-file[hidden] {
@@ -385,7 +388,7 @@ a {
 .submit-row {
     display: flex;
     justify-content: flex-end;
-    padding-top: 44px;
+    padding-top: 28px;
 }
 
 .submit-button {
@@ -549,21 +552,15 @@ a {
     align-items: center;
     justify-content: space-between;
     gap: 28px;
-    padding: 38px 104px;
+    margin-top: 24px;
+    padding: 28px 40px;
     border-top: 1px solid #d1d4dd;
     background: #fff;
     color: #202434;
 }
 
-.portal-footer div:first-child {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.footer-copy {
     font-size: 18px;
-}
-
-.portal-footer strong {
-    font-weight: 500;
 }
 
 .footer-links {
@@ -665,6 +662,10 @@ a {
 
     .document-card {
         min-height: 260px;
+    }
+
+    .document-card-wide {
+        grid-column: auto;
     }
 
     .submit-row {

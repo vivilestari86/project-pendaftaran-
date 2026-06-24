@@ -75,12 +75,14 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'profesi' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone_number' => 'required|string|max:20',
             'password' => 'required|string|min:8|confirmed',
             'terms_agreed' => 'required|accepted',
         ], [
             'name.required' => 'Nama harus diisi',
+            'profesi.required' => 'Profesi harus diisi',
             'email.required' => 'Email harus diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',
@@ -94,6 +96,7 @@ class AuthController extends Controller
 
         User::create([
             'name' => $validated['name'],
+            'profesi' => $validated['profesi'],
             'email' => $validated['email'],
             'phone_number' => $validated['phone_number'],
             'password' => Hash::make($validated['password']),

@@ -1,5 +1,7 @@
 @php
-    $uploadedCount = $uploadedDocuments->count();
+    $uploadedCount = collect(array_keys($documents))
+        ->filter(fn (string $key): bool => $uploadedDocuments->has($key))
+        ->count();
     $isDocumentComplete = $uploadedCount === count($documents);
 
     $statuses = [
@@ -10,7 +12,7 @@
             'state' => $isDocumentComplete ? 'done' : 'current',
         ],
         ['title' => 'Verifikasi Admin', 'description' => 'Menunggu validasi dokumen', 'state' => $isDocumentComplete ? 'current' : 'pending'],
-        ['title' => 'Wawancara', 'description' => 'Tahap wawancara akhir', 'state' => 'pending'],
+        ['title' => 'Uji Kompetensi', 'description' => 'Tahap uji kompetensi akhir', 'state' => 'pending'],
     ];
 @endphp
 
@@ -86,7 +88,7 @@
                                 $uploadedDocument = $uploadedDocumentList->first();
                                 $isMultiple = $document['multiple'] ?? false;
                             @endphp
-                            <article class="document-card">
+                            <article class="document-card {{ ($document['wide'] ?? false) ? 'document-card-wide' : '' }}">
                                 <div class="document-card-top">
                                     <span class="doc-icon {{ $document['tone'] }}">
                                         @switch($document['icon'])
@@ -133,7 +135,7 @@
                                     <input
                                         type="file"
                                         name="documents[{{ $key }}]{{ $isMultiple ? '[]' : '' }}"
-                                        accept="{{ $document['format'] === 'JPG' ? '.jpg,.jpeg' : '.pdf' }}"
+                                        accept=".pdf,.jpg,.jpeg,.png"
                                         data-multiple="{{ $isMultiple ? 'true' : 'false' }}"
                                         data-max-files="{{ $document['max_files'] ?? 1 }}"
                                         {{ $isMultiple ? 'multiple' : '' }}
@@ -193,10 +195,7 @@
             </div>
 
             <footer class="portal-footer">
-                <div>
-                    <strong>Polindra Portal</strong>
-                    <span>© 2026 Polindra Portal. All rights reserved.</span>
-                </div>
+                <div class="footer-copy">Polindra Portal © 2026. All rights reserved.</div>
                 <div class="footer-links">
                     <a href="#">Kebijakan Privasi</a>
                     <a href="#">Syarat Layanan</a>
