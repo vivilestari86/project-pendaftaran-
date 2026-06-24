@@ -28,7 +28,12 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
+            'phone_number' => fake()->numerify('08##########'),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => fake()->randomElement(['admin', 'user']),
+            'status' => fake()->randomElement(['Active', 'Inactive']),
+            'last_active_at' => fake()->dateTimeBetween('-30 days', 'now'),
+            'terms_agreed' => true,
             'remember_token' => Str::random(10),
         ];
     }
@@ -40,6 +45,24 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+            'status' => 'Active',
+            'last_active_at' => now(),
+        ]);
+    }
+
+    public function activeUser(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'user',
+            'status' => 'Active',
+            'last_active_at' => fake()->dateTimeBetween('-7 days', 'now'),
         ]);
     }
 }
