@@ -3,8 +3,8 @@
 <div class="panel">
     <div class="panel-header">
         <div>
-            <div class="panel-title">Distribusi Wilayah</div>
-            <div class="panel-subtitle">Asal daerah pendaftar terbanyak</div>
+            <div class="panel-title">Distribusi Profesi</div>
+            <div class="panel-subtitle">Profesi pendaftar terbanyak dari data user</div>
         </div>
     </div>
 

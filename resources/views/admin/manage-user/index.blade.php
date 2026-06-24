@@ -66,6 +66,14 @@
     .status-badge::before { content: '*'; font-size: 8px; }
     .status-active   { background: var(--green-bg); color: #065f46; }
     .status-inactive { background: var(--amber-bg); color: #b45309; }
+    .verify-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    }
+    .verify-badge::before { content: '*'; font-size: 8px; }
+    .verify-done { background: var(--green-bg); color: #065f46; }
+    .verify-waiting { background: #eff6ff; color: #1d4ed8; }
+    .verify-blocked { background: #f1f5f9; color: #64748b; }
 
     .action-btns { display: flex; gap: 6px; }
     .action-btn {
@@ -139,6 +147,7 @@
             <tr>
                 <th>User</th>
                 <th>Status</th>
+                <th>Status Verifikasi</th>
                 <th>Phone</th>
                 <th>Last Active</th>
                 <th>Actions</th>
@@ -149,8 +158,18 @@
             @php
                 $c = 'av-' . ($user->id % 8);
                 $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($part) => strtoupper(substr($part, 0, 1)))->implode('');
+                $isDocumentComplete = $completeUserIds->contains($user->id);
+                $isDocumentVerified = $verifiedUserIds->contains($user->id);
+                $statusClass = $isDocumentComplete ? 'status-active' : 'status-inactive';
+                $statusLabel = $isDocumentComplete ? 'Lengkap' : 'Belum Lengkap';
+                $verificationClass = $isDocumentVerified
+                    ? 'verify-done'
+                    : ($isDocumentComplete ? 'verify-waiting' : 'verify-blocked');
+                $verificationLabel = $isDocumentVerified
+                    ? 'Terverifikasi'
+                    : ($isDocumentComplete ? 'Menunggu Verifikasi' : 'Belum Bisa Diverifikasi');
                 $isCurrentUser = auth()->id() === $user->id;
-                $isProtectedAdmin = $user->isAdmin() && $stats['admins'] <= 1;
+                $isProtectedAdmin = false;
                 $canDelete = ! $isCurrentUser && ! $isProtectedAdmin;
                 $deleteTitle = $canDelete
                     ? 'Hapus'
@@ -167,8 +186,13 @@
                     </div>
                 </td>
                 <td>
-                    <span class="status-badge status-{{ strtolower($user->status) }}">
-                        {{ $user->status === 'Active' ? 'Lengkap' : 'Belum Lengkap' }}
+                    <span class="status-badge {{ $statusClass }}">
+                        {{ $statusLabel }}
+                    </span>
+                </td>
+                <td>
+                    <span class="verify-badge {{ $verificationClass }}">
+                        {{ $verificationLabel }}
                     </span>
                 </td>
                 <td style="color:var(--text-secondary)">{{ $user->phone_number ?: 'Tidak tersedia' }}</td>
@@ -196,7 +220,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="5">
+                <td colspan="6">
                     <div class="empty-state">
                         <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         <p>Tidak ada user ditemukan</p>

@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pendaftar/{pendaftar}/detail', [DashboardController::class, 'detail'])->name('pendaftar.detail');
 
         Route::post('/manage-users/{manage_user}/verify', [ManageUserController::class, 'verify'])->name('manage-users.verify');
+        Route::get('/manage-users/{manage_user}/documents/{document}', [ManageUserController::class, 'showDocument'])->name('manage-users.documents.show');
         Route::resource('manage-users', ManageUserController::class)->except(['show', 'create', 'store']);
     });
 });

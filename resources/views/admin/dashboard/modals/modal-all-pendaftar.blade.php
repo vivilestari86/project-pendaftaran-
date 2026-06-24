@@ -14,7 +14,7 @@
                 <div class="modal-pendaftar-row modal-pendaftar-row-head">
                     <span>Nama</span>
                     <span>Profesi</span>
-                    <span>Wilayah</span>
+                    <span>Dokumen</span>
                     <span>Status</span>
                     <span>Tanggal</span>
                 </div>

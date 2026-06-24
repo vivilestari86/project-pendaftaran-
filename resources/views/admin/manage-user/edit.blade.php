@@ -165,6 +165,31 @@
         background: #fff7e8;
     }
 
+    .verification-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .verification-pill.is-verified {
+        color: #047857;
+        background: #dcfce7;
+    }
+
+    .verification-pill.is-waiting {
+        color: #1d4ed8;
+        background: #eff6ff;
+    }
+
+    .verification-pill.is-blocked {
+        color: #64748b;
+        background: #f1f5f9;
+    }
+
     .files-card {
         padding: 20px;
     }
@@ -234,6 +259,25 @@
     .file-view {
         margin-left: auto;
         color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: color .15s;
+    }
+
+    .file-view:hover {
+        color: #2563eb;
+    }
+
+    .file-empty {
+        padding: 14px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        color: var(--text-muted);
+        background: #f8fafc;
+        font-size: 12px;
+        line-height: 1.5;
     }
 
     .verify-button {
@@ -459,9 +503,10 @@
 @php
     $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($part) => strtoupper(substr($part, 0, 1)))->implode('');
     $roleLabel = $user->isAdmin() ? 'Administrator' : 'Registrant';
-    $statusClass = strtolower($user->status) === 'active' ? 'status-active' : 'status-inactive';
-    $statusLabel = $user->status === 'Active' ? 'Lengkap' : 'Belum Lengkap';
-    $documentPrefix = preg_replace('/[^A-Za-z0-9]+/', '_', trim($user->name)) ?: 'User';
+    $statusClass = $isDocumentComplete ? 'status-active' : 'status-inactive';
+    $statusLabel = $isDocumentComplete ? 'Lengkap' : 'Belum Lengkap';
+    $verificationLabel = $isDocumentVerified ? 'Terverifikasi' : ($isDocumentComplete ? 'Menunggu Verifikasi' : 'Belum Bisa Diverifikasi');
+    $verificationClass = $isDocumentVerified ? 'is-verified' : ($isDocumentComplete ? 'is-waiting' : 'is-blocked');
 @endphp
 
 <div class="profile-page">
@@ -503,6 +548,14 @@
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
                         <span>Status: <span class="status-pill {{ $statusClass }}">{{ $statusLabel }}</span></span>
                     </div>
+                    <div class="meta-row">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                        <span>Dokumen: {{ $uploadedDocumentCount }}/{{ $requiredDocumentCount }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+                        <span>Verifikasi: <span class="verification-pill {{ $verificationClass }}">{{ $verificationLabel }}</span></span>
+                    </div>
                 </div>
             </section>
 
@@ -513,37 +566,33 @@
                 </div>
 
                 <div class="file-list">
-                    <div class="file-item">
-                        <div class="file-icon">
-                            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                    @forelse ($uploadedDocuments as $document)
+                        <div class="file-item">
+                            <div class="file-icon">
+                                <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                            </div>
+                            <div>
+                                <div class="file-name">{{ $document->original_name }}</div>
+                                <div class="file-meta">
+                                    {{ number_format(($document->file_size ?: 0) / 1048576, 1) }} MB
+                                    - {{ strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION) ?: 'FILE') }}
+                                </div>
+                            </div>
+                            <a class="file-view" href="{{ route('admin.manage-users.documents.show', [$user, $document]) }}" target="_blank" rel="noopener" title="Lihat file">
+                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </a>
                         </div>
-                        <div>
-                            <div class="file-name">KTP_{{ $documentPrefix }}.pdf</div>
-                            <div class="file-meta">2.4 MB - PDF</div>
+                    @empty
+                        <div class="file-empty">
+                            Belum ada file yang diupload oleh peserta ini.
                         </div>
-                        <div class="file-view">
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="file-item">
-                        <div class="file-icon">
-                            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg>
-                        </div>
-                        <div>
-                            <div class="file-name">Akun_{{ $documentPrefix }}.pdf</div>
-                            <div class="file-meta">1.8 MB - PDF</div>
-                        </div>
-                        <div class="file-view">
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </div>
-                    </div>
+                    @endforelse
 
                     <form method="POST" action="{{ route('admin.manage-users.verify', $user) }}">
                         @csrf
-                        <button type="submit" class="verify-button {{ $user->status === 'Active' ? 'is-complete' : '' }}" {{ $user->status === 'Active' ? 'disabled' : '' }}>
+                        <button type="submit" class="verify-button {{ $isDocumentVerified ? 'is-complete' : '' }}" {{ (! $isDocumentComplete || $isDocumentVerified) ? 'disabled' : '' }}>
                             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-                            {{ $user->status === 'Active' ? 'Sudah Lengkap' : 'Verifikasi' }}
+                            {{ $isDocumentVerified ? 'Sudah Terverifikasi' : ($isDocumentComplete ? 'Verifikasi' : 'Dokumen Belum Lengkap') }}
                         </button>
                     </form>
                 </div>

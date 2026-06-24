@@ -19,7 +19,7 @@
             <th>Profesi</th>
             <th>Email</th>
             <th>No HP</th>
-            <th>Wilayah</th>
+            <th>Kelengkapan Dokumen</th>
             <th>Status Kelengkapan</th>
             <th>Tanggal Daftar</th>
         </tr>
