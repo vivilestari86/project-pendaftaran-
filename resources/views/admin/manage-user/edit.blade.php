@@ -220,6 +220,70 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+        max-height: 520px;
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+
+    .file-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .file-list::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 999px;
+    }
+
+    .file-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+
+    .file-list::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    .verify-form {
+        margin-top: 12px;
+    }
+
+    .file-category {
+        border: 1px solid #e4eaf1;
+        border-radius: 10px;
+        padding: 12px;
+        background: #ffffff;
+    }
+
+    .file-category-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .file-category-title {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    .file-category-state {
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 10px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .file-category-state.is-uploaded {
+        background: #dcfce7;
+        color: #047857;
+    }
+
+    .file-category-state.is-empty {
+        background: #f1f5f9;
+        color: #64748b;
     }
 
     .file-item {
@@ -227,9 +291,13 @@
         align-items: center;
         gap: 10px;
         padding: 12px;
-        border: 1px solid #e4eaf1;
+        border: 1px solid #edf2f7;
         border-radius: 8px;
         background: #f8fafc;
+    }
+
+    .file-category .file-item + .file-item {
+        margin-top: 8px;
     }
 
     .file-icon {
@@ -566,36 +634,48 @@
                 </div>
 
                 <div class="file-list">
-                    @forelse ($uploadedDocuments as $document)
-                        <div class="file-item">
-                            <div class="file-icon">
-                                <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                    @foreach ($documentCategories as $category)
+                        <div class="file-category">
+                            <div class="file-category-head">
+                                <div class="file-category-title">{{ $category['label'] }}</div>
+                                <span class="file-category-state {{ $category['documents']->isNotEmpty() ? 'is-uploaded' : 'is-empty' }}">
+                                    {{ $category['documents']->isNotEmpty() ? 'Uploaded' : 'Belum Upload' }}
+                                </span>
                             </div>
-                            <div>
-                                <div class="file-name">{{ $document->original_name }}</div>
-                                <div class="file-meta">
-                                    {{ number_format(($document->file_size ?: 0) / 1048576, 1) }} MB
-                                    - {{ strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION) ?: 'FILE') }}
-                                </div>
-                            </div>
-                            <a class="file-view" href="{{ route('admin.manage-users.documents.show', [$user, $document]) }}" target="_blank" rel="noopener" title="Lihat file">
-                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </a>
-                        </div>
-                    @empty
-                        <div class="file-empty">
-                            Belum ada file yang diupload oleh peserta ini.
-                        </div>
-                    @endforelse
 
-                    <form method="POST" action="{{ route('admin.manage-users.verify', $user) }}">
-                        @csrf
-                        <button type="submit" class="verify-button {{ $isDocumentVerified ? 'is-complete' : '' }}" {{ (! $isDocumentComplete || $isDocumentVerified) ? 'disabled' : '' }}>
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-                            {{ $isDocumentVerified ? 'Sudah Terverifikasi' : ($isDocumentComplete ? 'Verifikasi' : 'Dokumen Belum Lengkap') }}
-                        </button>
-                    </form>
+                            @forelse ($category['documents'] as $document)
+                                <div class="file-item">
+                                    <div class="file-icon">
+                                        <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="file-name">{{ $document->original_name }}</div>
+                                        <div class="file-meta">
+                                            {{ number_format(($document->file_size ?: 0) / 1048576, 1) }} MB
+                                            - {{ strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION) ?: 'FILE') }}
+                                        </div>
+                                    </div>
+                                    <a class="file-view" href="{{ route('admin.manage-users.documents.show', [$user, $document]) }}" target="_blank" rel="noopener" title="Lihat file {{ $category['label'] }}">
+                                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </a>
+                                </div>
+                            @empty
+                                <div class="file-empty">
+                                    Belum ada file untuk kategori ini.
+                                </div>
+                            @endforelse
+                        </div>
+                    @endforeach
+
                 </div>
+
+                <form method="POST" action="{{ route('admin.manage-users.verify', $user) }}" class="verify-form">
+                    @csrf
+                    <button type="submit" class="verify-button {{ $isDocumentVerified ? 'is-complete' : '' }}" {{ (! $isDocumentComplete || $isDocumentVerified) ? 'disabled' : '' }}>
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                        {{ $isDocumentVerified ? 'Sudah Terverifikasi' : ($isDocumentComplete ? 'Verifikasi' : 'Dokumen Belum Lengkap') }}
+                    </button>
+                </form>
             </section>
         </aside>
 
