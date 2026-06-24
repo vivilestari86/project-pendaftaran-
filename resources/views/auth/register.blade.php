@@ -8,15 +8,14 @@
 </head>
 <body>
     <div class="container">
-        <!-- Left Section -->
         <div class="left-section">
-            <div>
+            <div class="left-content">
                 <div class="logo">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo Politeknik Negeri Indramayu" class="brand-logo">
                 </div>
+
                 <div class="tagline">
-                    <h1>Registrasi pengguna dengan alur yang sederhana.</h1>
-                    <p>Halaman ini hanya untuk pendaftaran user. Akun admin dikelola langsung oleh sistem.</p>
+                    <h1>Registrasi portal polindra</h1>
                 </div>
 
                 <div class="features">
@@ -33,7 +32,7 @@
                 </div>
             </div>
 
-            <div>
+            <div class="left-footer">
                 <div class="trusted">
                     <div class="avatars">
                         <div class="avatar">👨</div>
@@ -42,18 +41,15 @@
                     </div>
                     <span>Registrasi publik hanya tersedia untuk user</span>
                 </div>
-                <div class="footer">
-                    © 2024 Portal Pendaftaran. All rights reserved.
-                </div>
             </div>
         </div>
 
-        <!-- Right Section -->
         <div class="right-section">
             <div class="register-form">
                 <div class="register-logo-wrap">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo Politeknik Negeri Indramayu" class="register-logo">
                 </div>
+
                 <h2>Registrasi User</h2>
                 <p class="subtitle">Isi form berikut untuk membuat akun user.</p>
 
@@ -74,14 +70,13 @@
                 <form method="POST" action="{{ route('register.submit') }}">
                     @csrf
 
-                    <!-- Full Name -->
                     <div class="form-group">
                         <label for="name">Nama Lengkap</label>
                         <div class="input-wrapper">
                             <span class="input-icon">👤</span>
-                            <input type="text" id="name" name="name" 
-                                placeholder="Nama lengkap" 
-                                value="{{ old('name') }}" 
+                            <input type="text" id="name" name="name"
+                                placeholder="Nama lengkap"
+                                value="{{ old('name') }}"
                                 required>
                         </div>
                         @error('name')
@@ -89,7 +84,6 @@
                         @enderror
                     </div>
 
-                    <!-- Profesi -->
                     <div class="form-group">
                         <label for="profesi">Profesi</label>
                         <div class="input-wrapper">
@@ -104,14 +98,13 @@
                         @enderror
                     </div>
 
-                    <!-- Email -->
                     <div class="form-group">
                         <label for="email">Alamat Email</label>
                         <div class="input-wrapper">
                             <span class="input-icon">✉️</span>
-                            <input type="email" id="email" name="email" 
-                                placeholder="email@contoh.com" 
-                                value="{{ old('email') }}" 
+                            <input type="email" id="email" name="email"
+                                placeholder="email@contoh.com"
+                                value="{{ old('email') }}"
                                 required>
                         </div>
                         @error('email')
@@ -119,14 +112,13 @@
                         @enderror
                     </div>
 
-                    <!-- Phone Number -->
                     <div class="form-group">
                         <label for="phone_number">Nomor Telepon</label>
                         <div class="input-wrapper">
                             <span class="input-icon">📱</span>
-                            <input type="tel" id="phone_number" name="phone_number" 
-                                placeholder="+62 800-0000-000" 
-                                value="{{ old('phone_number') }}" 
+                            <input type="tel" id="phone_number" name="phone_number"
+                                placeholder="+62 800-0000-000"
+                                value="{{ old('phone_number') }}"
                                 required>
                         </div>
                         @error('phone_number')
@@ -134,13 +126,12 @@
                         @enderror
                     </div>
 
-                    <!-- Password -->
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="input-wrapper">
                             <span class="input-icon">🔒</span>
-                            <input type="password" id="password" name="password" 
-                                placeholder="••••••••" 
+                            <input type="password" id="password" name="password"
+                                placeholder="••••••••"
                                 required>
                             <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
                         </div>
@@ -150,13 +141,12 @@
                         @enderror
                     </div>
 
-                    <!-- Confirm Password -->
                     <div class="form-group">
                         <label for="password_confirmation">Konfirmasi Password</label>
                         <div class="input-wrapper">
                             <span class="input-icon">🔒</span>
-                            <input type="password" id="password_confirmation" name="password_confirmation" 
-                                placeholder="••••••••" 
+                            <input type="password" id="password_confirmation" name="password_confirmation"
+                                placeholder="••••••••"
                                 required>
                             <button type="button" class="toggle-password" onclick="togglePasswordConfirm()">👁️</button>
                         </div>
@@ -165,7 +155,6 @@
                         @enderror
                     </div>
 
-                    <!-- Terms Checkbox -->
                     <div class="checkbox-group">
                         <input type="checkbox" id="terms" name="terms_agreed" required>
                         <label for="terms" class="checkbox-label">
@@ -176,22 +165,14 @@
                         <span style="font-size: 12px; color: #dc3545;">{{ $message }}</span>
                     @enderror
 
-                    <!-- Register Button -->
                     <button type="submit" class="btn-register">
                         Daftar Akun <span>→</span>
                     </button>
 
-                    <!-- Divider -->
                     <div class="divider">
                         <span>OR</span>
                     </div>
 
-                    <!-- Google Button -->
-                    <button type="button" class="btn-google">
-                        <span>👤</span> Daftar dengan Google
-                    </button>
-
-                    <!-- Login Link -->
                     <div class="login-link">
                         Sudah punya akun? <a href="{{ route('login') }}">Masuk</a>
                     </div>
