@@ -53,11 +53,7 @@ class AuthController extends Controller
             'last_active_at' => now(),
         ])->save();
 
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', 'Selamat datang Admin!');
-        }
-
-        return redirect()->route('user.dashboard')->with('success', 'Login berhasil!');
+        return redirect()->route('dashboard');
     }
 
     public function showRegister()

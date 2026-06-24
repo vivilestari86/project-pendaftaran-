@@ -9,6 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            if (!Schema::hasColumn('users', 'role')) {
+                $table->enum('role', ['admin', 'user'])->default('user')->after('password');
+            }
+        });
+
+        Schema::table('users', function (Blueprint $table) {
             if (!Schema::hasColumn('users', 'status')) {
                 $table->enum('status', ['Active', 'Inactive'])->default('Active')->after('role');
             }
@@ -27,6 +33,9 @@ return new class extends Migration
             if (!Schema::hasColumn('users', 'remember_token')) {
                 $table->rememberToken()->after('password');
             }
+            if (!Schema::hasColumn('users', 'deleted_at')) {
+                $table->softDeletes();
+            }
         });
     }
 
@@ -40,6 +49,7 @@ return new class extends Migration
                 'terms_agreed',
                 'email_verified_at',
                 'remember_token',
+                'deleted_at',
             ])->filter(fn ($column) => Schema::hasColumn('users', $column))->all();
 
             if ($columns !== []) {
