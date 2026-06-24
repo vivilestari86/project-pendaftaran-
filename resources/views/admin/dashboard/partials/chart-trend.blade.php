@@ -4,11 +4,11 @@
     <div class="panel-header">
         <div>
             <div class="panel-title">Tren Pendaftar Mingguan</div>
-            <div class="panel-subtitle">Volume pendaftar harian dalam satu minggu</div>
+            <div class="panel-subtitle">Pendaftar = total data masuk per hari, Data Lengkap = pendaftar yang statusnya lengkap di hari yang sama.</div>
         </div>
         <div class="chart-toggle">
             <button type="button" class="active" data-mode="pendaftar">Pendaftar</button>
-            <button type="button" data-mode="kelengkapan">Kelengkapan</button>
+            <button type="button" data-mode="kelengkapan">Data Lengkap</button>
         </div>
     </div>
 
