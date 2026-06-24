@@ -6,7 +6,13 @@ use App\Http\Controllers\ManageUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        return auth()->user()->isAdmin()
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('user.dashboard');
+    }
+
+    return redirect()->route('login');
 })->name('home');
 
 Route::middleware('guest')->group(function () {
@@ -20,7 +26,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', function () {
-        return view('welcome');
+        if (! auth()->check()) {
+            return redirect()->route('login');
+        }
+
+        $user = auth()->user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return view('user.dashboard', compact('user'));
     })->name('user.dashboard');
 
     Route::prefix('admin')->name('admin.')->middleware('is.admin')->group(function () {
