@@ -192,6 +192,13 @@ a {
     line-height: 1.45;
 }
 
+.upload-progress-text {
+    margin-top: 12px;
+    color: #087443;
+    font-size: 15px;
+    font-weight: 700;
+}
+
 .title-row {
     display: flex;
     align-items: center;
