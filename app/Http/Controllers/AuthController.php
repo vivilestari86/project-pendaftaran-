@@ -49,13 +49,19 @@ class AuthController extends Controller
             ])->onlyInput('email');
         }
 
+        if ($user->isAdmin()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'Login admin belum tersedia. Silakan gunakan akun user.',
+            ])->onlyInput('email');
+        }
+
         $user->forceFill([
             'last_active_at' => now(),
         ])->save();
-
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', 'Selamat datang Admin!');
-        }
 
         return redirect()->route('user.dashboard')->with('success', 'Login berhasil!');
     }
