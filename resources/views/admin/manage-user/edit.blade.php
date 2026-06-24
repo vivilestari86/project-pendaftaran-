@@ -4,91 +4,453 @@
 
 @push('styles')
 <style>
-    .back-link {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 13px; color: var(--text-secondary); text-decoration: none; margin-bottom: 20px;
+    .profile-page {
+        max-width: 1180px;
+        margin: 0 auto;
     }
-    .back-link:hover { color: var(--text-primary); }
 
-    .detail-grid {
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .breadcrumb a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        color: var(--brand-dark);
+    }
+
+    .page-heading {
+        margin-bottom: 28px;
+    }
+
+    .page-heading h1 {
+        font-size: 26px;
+        line-height: 1.2;
+        color: var(--text-primary);
+    }
+
+    .editor-layout {
         display: grid;
-        grid-template-columns: 1.25fr .95fr;
-        gap: 20px;
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
     }
-    .card {
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 22px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
-    }
-    .card-header {
-        padding: 22px 24px; border-bottom: 1px solid var(--border);
-        display: flex; align-items: center; gap: 14px;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-    }
-    .avatar {
-        width: 56px; height: 56px; border-radius: 18px;
-        background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%); color: #fff;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 18px; font-weight: 700; flex-shrink: 0;
-        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
-    }
-    .card-header h2 { font-size: 18px; font-weight: 700; }
-    .card-header p { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
 
-    .card-body { padding: 24px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .info-item {
-        padding: 14px 16px; border: 1px solid var(--border);
-        border-radius: 16px; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    .side-stack,
+    .main-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
     }
-    .info-label {
-        font-size: 11px; font-weight: 700; color: var(--text-muted);
-        text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px;
-    }
-    .info-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-    .info-value.muted { font-weight: 500; color: var(--text-secondary); }
 
-    .status-badge {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    .profile-card,
+    .files-card,
+    .form-card,
+    .notice-card {
+        background: #ffffff;
+        border: 1px solid #e4eaf1;
+        border-radius: 10px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
     }
-    .status-badge::before { content: '*'; font-size: 8px; }
-    .status-active { background: var(--green-bg); color: #065f46; }
-    .status-inactive { background: #f1f5f9; color: #64748b; }
 
-    .password-form { display: flex; flex-direction: column; gap: 18px; }
-    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-    .section-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 13px; font-weight: 600; }
+    .profile-card {
+        padding: 26px 24px;
+        text-align: center;
+    }
+
+    .avatar-wrap {
+        position: relative;
+        width: 124px;
+        height: 124px;
+        margin: 0 auto 16px;
+    }
+
+    .avatar-large {
+        width: 124px;
+        height: 124px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 34px;
+        font-weight: 800;
+        box-shadow: 0 20px 35px rgba(37, 99, 235, 0.18);
+        overflow: hidden;
+    }
+
+    .avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .camera-dot {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        background: #2563eb;
+        border: 4px solid #ffffff;
+    }
+
+    .profile-name {
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 3px;
+    }
+
+    .profile-email {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-bottom: 24px;
+        word-break: break-word;
+    }
+
+    .profile-meta {
+        border-top: 1px solid #e4eaf1;
+        padding-top: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        text-align: left;
+    }
+
+    .meta-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .meta-row svg {
+        color: var(--text-muted);
+        flex-shrink: 0;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .status-active {
+        color: #047857;
+        background: #dcfce7;
+    }
+
+    .status-inactive {
+        color: #b45309;
+        background: #fff7e8;
+    }
+
+    .files-card {
+        padding: 20px;
+    }
+
+    .files-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .files-title {
+        font-size: 12px;
+        font-weight: 800;
+        color: #334155;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .files-action {
+        color: #2563eb;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid #e4eaf1;
+        border-radius: 8px;
+        background: #f8fafc;
+    }
+
+    .file-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: #e0ecff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .file-name {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    .file-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .file-view {
+        margin-left: auto;
+        color: var(--text-muted);
+    }
+
+    .verify-button {
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 13px;
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 700;
+        background: #ffffff;
+        cursor: pointer;
+        transition: border-color .15s, color .15s, background .15s;
+    }
+
+    .verify-button:hover {
+        border-color: #22c55e;
+        color: #047857;
+        background: #f0fdf4;
+    }
+
+    .verify-button.is-complete {
+        border-style: solid;
+        border-color: #bbf7d0;
+        color: #047857;
+        background: #f0fdf4;
+        cursor: default;
+    }
+
+    .form-card {
+        overflow: hidden;
+    }
+
+    .form-banner {
+        background: #0f172a;
+        color: #dbeafe;
+        padding: 18px 22px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .form-body {
+        padding: 28px 30px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px 22px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group.span-2 {
+        grid-column: span 2;
+    }
+
+    .form-label {
+        font-size: 12px;
+        color: #475569;
+        font-weight: 800;
+    }
+
+    .input-shell {
+        position: relative;
+    }
+
+    .input-shell svg {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        pointer-events: none;
+    }
+
     .form-input {
-        padding: 10px 12px; border: 1px solid var(--border);
-        border-radius: 14px; font-size: 13.5px;
-        color: var(--text-primary); background: #fff; outline: none;
+        width: 100%;
+        min-height: 42px;
+        padding: 10px 12px 10px 38px;
+        border: 1px solid #d9e2ec;
+        border-radius: 7px;
+        background: #ffffff;
+        color: var(--text-primary);
+        font-size: 13px;
+        outline: none;
     }
-    .form-input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12); }
-    .form-input.is-error { border-color: var(--red); }
-    .err { font-size: 12px; color: var(--red); }
-    .hint { font-size: 12px; color: var(--text-muted); }
+
+    .form-input[readonly] {
+        background: #f8fafc;
+        color: #475569;
+    }
+
+    .form-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .form-input.is-error {
+        border-color: var(--red);
+    }
+
+    .form-divider {
+        margin: 24px 0;
+        border: 0;
+        border-top: 1px solid #e4eaf1;
+    }
+
+    .password-title {
+        font-size: 15px;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .password-copy {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-bottom: 18px;
+    }
+
+    .err {
+        color: var(--red);
+        font-size: 12px;
+        font-weight: 600;
+    }
 
     .form-footer {
-        padding-top: 16px; display: flex; justify-content: flex-end; gap: 10px;
-    }
-    .btn-cancel, .btn-submit {
-        padding: 10px 16px; border-radius: 14px;
-        font-size: 13.5px; font-weight: 600; text-decoration: none;
-    }
-    .btn-cancel {
-        background: #fff; border: 1px solid var(--border); color: var(--text-secondary);
-    }
-    .btn-submit {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border: none; cursor: pointer;
-        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
+        margin-top: 24px;
+        padding-top: 22px;
+        border-top: 1px solid #e4eaf1;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
     }
 
-    @media (max-width: 960px) {
-        .detail-grid { grid-template-columns: 1fr; }
-        .info-grid { grid-template-columns: 1fr; }
+    .btn-cancel,
+    .btn-submit {
+        min-height: 42px;
+        padding: 10px 18px;
+        border-radius: 7px;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-cancel {
+        color: var(--text-secondary);
+        background: #ffffff;
+        border: 1px solid transparent;
+    }
+
+    .btn-submit {
+        color: #ffffff;
+        background: #2563eb;
+        border: 1px solid #2563eb;
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+        cursor: pointer;
+    }
+
+    .notice-card {
+        padding: 22px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+    }
+
+    .notice-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        background: #fee2e2;
+        color: #dc2626;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .notice-card h3 {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .notice-card p {
+        color: var(--text-muted);
+        font-size: 12.5px;
+        line-height: 1.55;
+    }
+
+    @media (max-width: 980px) {
+        .editor-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group.span-2 {
+            grid-column: span 1;
+        }
     }
 </style>
 @endpush
@@ -96,96 +458,196 @@
 @section('content')
 @php
     $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($part) => strtoupper(substr($part, 0, 1)))->implode('');
+    $roleLabel = $user->isAdmin() ? 'Administrator' : 'Registrant';
+    $statusClass = strtolower($user->status) === 'active' ? 'status-active' : 'status-inactive';
+    $statusLabel = $user->status === 'Active' ? 'Lengkap' : 'Belum Lengkap';
+    $documentPrefix = preg_replace('/[^A-Za-z0-9]+/', '_', trim($user->name)) ?: 'User';
 @endphp
 
-<a href="{{ route('admin.manage-users.index') }}" class="back-link">
-    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    Kembali ke User Management
-</a>
-
-<div class="detail-grid">
-    <div class="card">
-        <div class="card-header">
-            <div class="avatar">{{ $initials ?: 'U' }}</div>
-            <div>
-                <h2>Detail User</h2>
-                <p>Informasi akun ini hanya untuk dilihat, bukan untuk mengubah role atau data pokok.</p>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Nama</div>
-                    <div class="info-value">{{ $user->name }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Email</div>
-                    <div class="info-value">{{ $user->email }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Nomor Telepon</div>
-                    <div class="info-value {{ $user->phone_number ? '' : 'muted' }}">{{ $user->phone_number ?: 'Tidak tersedia' }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Status</div>
-                    <div class="info-value">
-                        <span class="status-badge status-{{ strtolower($user->status) }}">{{ $user->status }}</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Terakhir Aktif</div>
-                    <div class="info-value muted">{{ $user->last_active_at ? $user->last_active_at->diffForHumans() : 'Belum pernah login' }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Tanggal Dibuat</div>
-                    <div class="info-value muted">{{ $user->created_at?->format('d M Y H:i') ?: '-' }}</div>
-                </div>
-            </div>
-        </div>
+<div class="profile-page">
+    <div class="breadcrumb">
+        <a href="{{ route('admin.manage-users.index') }}">Users</a>
+        <span>&gt;</span>
+        <span>Edit Detail</span>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h2>{{ $user->isAdmin() ? 'Ubah Password Admin' : 'Reset Password Pengguna' }}</h2>
-                <p>
-                    {{ $user->isAdmin()
-                        ? 'Admin dapat memperbarui password akun admin dari halaman detail ini.'
-                        : 'Jika pengguna lupa password, admin dapat mereset password akun ini dari halaman detail.' }}
-                </p>
-            </div>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ route('admin.manage-users.update', $user) }}" class="password-form">
-                @csrf
-                @method('PUT')
+    <div class="page-heading">
+        <h1>Edit Data User</h1>
+    </div>
 
-                <div>
-                    <div class="section-title">{{ $user->isAdmin() ? 'Password Baru Admin' : 'Password Baru Pengguna' }}</div>
-                    <div class="section-sub">
-                        {{ $user->isAdmin()
-                            ? 'Masukkan password baru minimal 8 karakter untuk akun admin ini.'
-                            : 'Masukkan password baru minimal 8 karakter agar pengguna bisa login kembali.' }}
+    <div class="editor-layout">
+        <aside class="side-stack">
+            <section class="profile-card">
+                <div class="avatar-wrap">
+                    <div class="avatar-large">
+                        @if($user->profile_photo_url)
+                            <img src="{{ $user->profile_photo_url }}" alt="Foto {{ $user->name }}">
+                        @else
+                            {{ $initials ?: 'U' }}
+                        @endif
+                    </div>
+                    <div class="camera-dot" aria-hidden="true">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="password">Password Baru</label>
-                    <input class="form-input @error('password') is-error @enderror" type="password" id="password" name="password" placeholder="Masukkan password baru" required>
-                    @error('password')<span class="err">{{ $message }}</span>@enderror
+                <div class="profile-name">{{ $user->name }}</div>
+                <div class="profile-email">{{ $user->email }}</div>
+
+                <div class="profile-meta">
+                    <div class="meta-row">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Role: {{ $roleLabel }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                        <span>Status: <span class="status-pill {{ $statusClass }}">{{ $statusLabel }}</span></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="files-card">
+                <div class="files-head">
+                    <div class="files-title">Scanned Files</div>
+                    <a class="files-action" href="{{ route('admin.manage-users.index') }}">Update All</a>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="password_confirmation">Konfirmasi Password</label>
-                    <input class="form-input" type="password" id="password_confirmation" name="password_confirmation" placeholder="Ulangi password baru" required>
-                    <span class="hint">Pastikan password konfirmasi sama persis.</span>
+                <div class="file-list">
+                    <div class="file-item">
+                        <div class="file-icon">
+                            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                        </div>
+                        <div>
+                            <div class="file-name">KTP_{{ $documentPrefix }}.pdf</div>
+                            <div class="file-meta">2.4 MB - PDF</div>
+                        </div>
+                        <div class="file-view">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="file-item">
+                        <div class="file-icon">
+                            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg>
+                        </div>
+                        <div>
+                            <div class="file-name">Akun_{{ $documentPrefix }}.pdf</div>
+                            <div class="file-meta">1.8 MB - PDF</div>
+                        </div>
+                        <div class="file-view">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('admin.manage-users.verify', $user) }}">
+                        @csrf
+                        <button type="submit" class="verify-button {{ $user->status === 'Active' ? 'is-complete' : '' }}" {{ $user->status === 'Active' ? 'disabled' : '' }}>
+                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                            {{ $user->status === 'Active' ? 'Sudah Lengkap' : 'Verifikasi' }}
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </aside>
+
+        <div class="main-stack">
+            <section class="form-card">
+                <div class="form-banner">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    Perbarui kata sandi akun ini tanpa mengubah data personal pengguna.
                 </div>
 
-                <div class="form-footer">
-                    <a href="{{ route('admin.manage-users.index') }}" class="btn-cancel">Batal</a>
-                    <button type="submit" class="btn-submit">Simpan Password</button>
+                <form method="POST" action="{{ route('admin.manage-users.update', $user) }}">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="form-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="name">Full Name</label>
+                                <div class="input-shell">
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <input class="form-input" type="text" id="name" value="{{ $user->name }}" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="email">Email Address</label>
+                                <div class="input-shell">
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
+                                    <input class="form-input" type="email" id="email" value="{{ $user->email }}" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="phone">Phone Number</label>
+                                <div class="input-shell">
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.35 1.89.66 2.78a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.3-1.23a2 2 0 0 1 2.11-.45c.89.31 1.82.53 2.78.66A2 2 0 0 1 22 16.92z"/></svg>
+                                    <input class="form-input" type="text" id="phone" value="{{ $user->phone_number ?: 'Tidak tersedia' }}" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="created_at">Registered At</label>
+                                <div class="input-shell">
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                                    <input class="form-input" type="text" id="created_at" value="{{ $user->created_at?->format('d/m/Y H:i') ?: '-' }}" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-group span-2">
+                                <label class="form-label" for="last_active_at">Last Active</label>
+                                <div class="input-shell">
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                    <input class="form-input" type="text" id="last_active_at" value="{{ $user->last_active_at ? $user->last_active_at->diffForHumans() : 'Belum pernah login' }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="form-divider">
+
+                        <div class="password-title">Ubah Kata Sandi</div>
+                        <div class="password-copy">Admin dapat mengganti kata sandi akun ini. Password minimal 8 karakter dan harus dikonfirmasi.</div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="password">Password Baru</label>
+                                <div class="input-shell">
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <input class="form-input @error('password') is-error @enderror" type="password" id="password" name="password" placeholder="Masukkan password baru" required>
+                                </div>
+                                @error('password')<span class="err">{{ $message }}</span>@enderror
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="password_confirmation">Konfirmasi Password</label>
+                                <div class="input-shell">
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                                    <input class="form-input" type="password" id="password_confirmation" name="password_confirmation" placeholder="Ulangi password baru" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-footer">
+                            <a href="{{ route('admin.manage-users.index') }}" class="btn-cancel">Batal</a>
+                            <button type="submit" class="btn-submit">
+                                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+                                Simpan Password
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <section class="notice-card">
+                <div class="notice-icon">
+                    <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </div>
-            </form>
+                <div>
+                    <h3>Privacy & Security Notice</h3>
+                    <p>Perubahan password langsung mengganti akses login pengguna. Pastikan permintaan reset sudah diverifikasi sebelum menyimpan perubahan.</p>
+                </div>
+            </section>
         </div>
     </div>
 </div>

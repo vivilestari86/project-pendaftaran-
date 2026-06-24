@@ -46,10 +46,9 @@
                 <div class="form-group">
                     <div class="label-row">
                         <label for="password">Kata Sandi</label>
-                        <a href="#" class="forgot-password">Lupa Kata Sandi?</a>
                     </div>
                     <div class="password-wrapper">
-                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                        <input type="password" id="password" name="password" class="password-input" placeholder="••••••••" required>
                         <button type="button" class="toggle-password" onclick="togglePassword(event)" aria-label="Tampilkan password">◉</button>
                     </div>
                 </div>
@@ -63,11 +62,6 @@
                     Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a>
                 </div>
             </form>
-        </div>
-
-        <div class="footer">
-            <p>Kebijakan Privasi <span>•</span> Syarat Layanan <span>•</span> Keamanan</p>
-            <p>© 2026 Health Enterprise.</p>
         </div>
     </main>
 

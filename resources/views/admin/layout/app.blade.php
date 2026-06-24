@@ -44,21 +44,19 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-w);
-            background:
-                radial-gradient(circle at top left, rgba(255,255,255,.72) 0%, rgba(255,255,255,0) 34%),
-                linear-gradient(180deg, #dffaf5 0%, #c9f1eb 42%, #b7e7f0 100%);
-            border-right: 1px solid rgba(15, 118, 110, .12);
+            background: #ffffff;
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             position: fixed;
             top: 0; left: 0; bottom: 0;
             z-index: 100;
             color: #0f172a;
-            box-shadow: inset -1px 0 0 rgba(255,255,255,.35);
+            box-shadow: 8px 0 28px rgba(15, 23, 42, 0.04);
         }
         .sidebar-brand {
             padding: 18px 16px 14px;
-            border-bottom: 1px solid rgba(15, 118, 110, .12);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -73,32 +71,32 @@
             min-width: 0;
         }
         .sidebar-brand .brand-name { font-size: 15px; font-weight: 700; line-height: 1.2; color: #0f172a; }
-        .sidebar-brand .brand-sub  { font-size: 11px; color: #336a72; margin-top: 2px; line-height: 1.35; }
+        .sidebar-brand .brand-sub  { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.35; }
         .sidebar-nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
 
         .nav-item {
             display: flex; align-items: center; gap: 10px;
             padding: 11px 12px;
             border-radius: var(--radius-sm);
-            color: #1f4f59;
+            color: var(--text-secondary);
             text-decoration: none;
             font-size: 13.5px; font-weight: 500;
             transition: background .15s, color .15s, transform .15s;
         }
         .nav-item:hover {
-            background: rgba(255,255,255,.62);
+            background: #f8fafc;
             color: #0f172a;
             transform: translateX(2px);
-            box-shadow: 0 10px 20px rgba(15, 118, 110, .08);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, .06);
         }
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(255,255,255,.92) 0%, rgba(220,255,249,.85) 100%);
+            background: var(--brand-light);
             color: var(--brand-dark);
             box-shadow: inset 0 0 0 1px rgba(15, 157, 143, .16), 0 12px 24px rgba(15, 118, 110, .1);
         }
         .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-        .sidebar-bottom { padding: 12px 10px; border-top: 1px solid rgba(15, 118, 110, .12); display: flex; flex-direction: column; gap: 2px; }
+        .sidebar-bottom { padding: 12px 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
 
         /* Main */
         .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
@@ -110,17 +108,6 @@
             position: sticky; top: 0; z-index: 50;
             backdrop-filter: blur(14px);
         }
-        .topbar-search { flex: 1; max-width: 360px; position: relative; }
-        .topbar-search input {
-            width: 100%; padding: 10px 14px 10px 38px;
-            border: 1px solid var(--border); border-radius: 999px;
-            font-size: 13px; background: #f8fbff; color: var(--text-primary); outline: none;
-        }
-        .topbar-search input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14); }
-        .topbar-search .si {
-            position: absolute; left: 10px; top: 50%;
-            transform: translateY(-50%); color: var(--text-muted); pointer-events: none;
-        }
         .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
         .icon-btn {
             width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
@@ -128,22 +115,6 @@
             cursor: pointer; color: var(--text-secondary); transition: background .15s;
         }
         .icon-btn:hover { background: #eff6ff; color: var(--brand); }
-        .user-chip {
-            display: flex; align-items: center; gap: 8px;
-            padding: 4px 10px 4px 4px;
-            border: 1px solid var(--border); border-radius: 20px; cursor: pointer; background: #fff;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-        }
-        .avatar-sm {
-            width: 28px; height: 28px; border-radius: 50%;
-            background: var(--brand); color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 700;
-            object-fit: cover;
-            overflow: hidden;
-        }
-        .user-chip-name { font-size: 13px; font-weight: 600; }
-        .user-chip-role { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
 
         /* Content */
         .content { padding: 28px 28px 40px; flex: 1; }
@@ -185,10 +156,6 @@
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Users
         </a>
-        <a href="{{ route('admin.settings') }}" class="nav-item {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-            Settings
-        </a>
     </nav>
     <div class="sidebar-bottom">
         <a href="{{ route('logout') }}" class="nav-item"
@@ -202,31 +169,6 @@
 
 <div class="main">
     <header class="topbar">
-        <div class="topbar-search">
-            <svg class="si" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="Search resources, users, or audits...">
-        </div>
-        <div class="topbar-actions">
-            <a href="{{ route('admin.settings') }}" class="icon-btn" title="Settings">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </a>
-            <a href="{{ route('admin.profile') }}" class="icon-btn" title="Profil">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            </a>
-            @auth
-            <a href="{{ route('admin.profile') }}" class="user-chip" style="text-decoration:none;color:inherit;">
-                @if(auth()->user()->profile_photo_url)
-                    <img src="{{ auth()->user()->profile_photo_url }}" alt="Foto Profil" class="avatar-sm">
-                @else
-                    <div class="avatar-sm">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</div>
-                @endif
-                <div>
-                    <div class="user-chip-name">{{ auth()->user()->name }}</div>
-                    <div class="user-chip-role">{{ auth()->user()->role ?? 'Admin' }}</div>
-                </div>
-            </a>
-            @endauth
-        </div>
     </header>
 
     <main class="content">

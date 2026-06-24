@@ -52,8 +52,18 @@ class ManageUserController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        return redirect()->route('admin.manage-users.index')
+        return redirect()->route('admin.manage-users.edit', $manageUser)
             ->with('success', 'Password akun berhasil diperbarui.');
+    }
+
+    public function verify(User $manageUser)
+    {
+        $manageUser->update([
+            'status' => 'Active',
+        ]);
+
+        return redirect()->route('admin.manage-users.edit', $manageUser)
+            ->with('success', 'Status akun berhasil diverifikasi menjadi lengkap.');
     }
 
     public function destroy(User $manageUser)

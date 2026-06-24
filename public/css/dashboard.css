@@ -619,6 +619,17 @@
     background: #dfe4f0;
 }
 
+.modal-avatar-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f9d8f 0%, #2f63ff 100%);
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
 .modal-profile-name {
     font-size: 15px;
     font-weight: 700;
@@ -736,6 +747,14 @@
     display: flex;
     gap: 10px;
     border-top: 1px solid var(--color-border);
+}
+
+.modal-footer-close {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    font-size: 15px;
+    min-height: 42px;
 }
 
 /* ===== Responsive ===== */

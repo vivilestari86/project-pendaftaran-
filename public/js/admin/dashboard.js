@@ -84,11 +84,10 @@
 
     const closeModal = (modal) => modal && modal.classList.remove('is-open');
     const detailModal = document.getElementById('modalDetailPendaftar');
-    const editModal = document.getElementById('modalEditPendaftar');
     const allPendaftarModal = document.getElementById('modalAllPendaftar');
     const openAllPendaftarButton = document.getElementById('openAllPendaftarModal');
 
-    document.querySelectorAll('.modal-close').forEach((button) => {
+    document.querySelectorAll('.modal-close, .modal-footer-close').forEach((button) => {
         button.addEventListener('click', () => closeModal(button.closest('.modal-overlay')));
     });
 
@@ -116,10 +115,13 @@
                 });
                 const payload = await response.json();
                 const data = payload.data;
+                const avatar = data.has_foto && data.foto
+                    ? `<img class="modal-avatar" src="${data.foto}" alt="${data.nama}">`
+                    : `<div class="modal-avatar modal-avatar-initials" aria-label="${data.nama}">${data.initials || '?'}</div>`;
 
                 body.innerHTML = `
                     <div class="modal-profile">
-                        <img class="modal-avatar" src="${data.foto}" alt="${data.nama}">
+                        ${avatar}
                         <div>
                             <p class="modal-profile-name">${data.nama}</p>
                             <p class="modal-profile-id">${data.id_pendaftar}</p>
@@ -140,23 +142,11 @@
                     `).join('')}
                 `;
 
-                const editButton = detailModal.querySelector('.modal-edit-btn');
-                if (editButton) {
-                    editButton.dataset.editUrl = item.dataset.editUrl;
-                }
             } catch (error) {
                 body.innerHTML = '<div class="modal-loading">Data gagal dimuat.</div>';
             }
         });
     });
-
-    if (detailModal && editModal) {
-        const editButton = detailModal.querySelector('.modal-edit-btn');
-        editButton && editButton.addEventListener('click', () => {
-            closeModal(detailModal);
-            editModal.classList.add('is-open');
-        });
-    }
 
     if (allPendaftarModal && openAllPendaftarButton) {
         openAllPendaftarButton.addEventListener('click', () => {

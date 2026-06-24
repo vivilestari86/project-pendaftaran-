@@ -15,30 +15,6 @@
     .page-title  { font-size: 24px; font-weight: 700; }
     .page-sub    { font-size: 13px; color: rgba(255,255,255,.82); margin-top: 5px; max-width: 560px; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    .stat-card {
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 20px; padding: 20px 20px;
-        display: flex; flex-direction: column; gap: 10px;
-        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.07);
-    }
-    .stat-icon-row { display: flex; align-items: center; justify-content: space-between; }
-    .stat-icon {
-        width: 40px; height: 40px; border-radius: var(--radius-sm);
-        display: flex; align-items: center; justify-content: center;
-    }
-    .si-blue  { background: #e0e7ff; color: var(--brand); }
-    .si-green { background: var(--green-bg); color: var(--green); }
-    .si-amber { background: var(--amber-bg); color: var(--amber); }
-    .si-red   { background: var(--red-bg); color: var(--red); }
-    .stat-badge {
-        font-size: 11px; font-weight: 600; padding: 2px 8px;
-        border-radius: 20px; background: var(--green-bg); color: var(--green);
-    }
-    .stat-badge.dot::before { content: '*'; margin-right: 4px; font-size: 8px; }
-    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-    .stat-value { font-size: 28px; font-weight: 700; line-height: 1; }
-
     .table-card {
         background: var(--surface); border: 1px solid var(--border);
         border-radius: 22px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.07); overflow: hidden;
@@ -89,7 +65,7 @@
     }
     .status-badge::before { content: '*'; font-size: 8px; }
     .status-active   { background: var(--green-bg); color: #065f46; }
-    .status-inactive { background: #f1f5f9; color: #64748b; }
+    .status-inactive { background: var(--amber-bg); color: #b45309; }
 
     .action-btns { display: flex; gap: 6px; }
     .action-btn {
@@ -142,50 +118,6 @@
     </div>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon-row">
-            <div class="stat-icon si-blue">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <span class="stat-badge">Total</span>
-        </div>
-        <div class="stat-label">Total Users</div>
-        <div class="stat-value">{{ number_format($stats['total']) }}</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon-row">
-            <div class="stat-icon si-green">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <span class="stat-badge dot">Aktif</span>
-        </div>
-        <div class="stat-label">Active Now</div>
-        <div class="stat-value">{{ number_format($stats['active']) }}</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon-row">
-            <div class="stat-icon si-amber">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-            </div>
-        </div>
-        <div class="stat-label">Administrators</div>
-        <div class="stat-value">{{ number_format($stats['admins']) }}</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon-row">
-            <div class="stat-icon si-red">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-            </div>
-        </div>
-        <div class="stat-label">Inactive Accounts</div>
-        <div class="stat-value">{{ number_format($stats['inactive']) }}</div>
-    </div>
-</div>
-
 <div class="table-card">
     <form method="GET" action="{{ route('admin.manage-users.index') }}" class="table-toolbar">
         <div class="search-wrap">
@@ -235,7 +167,9 @@
                     </div>
                 </td>
                 <td>
-                    <span class="status-badge status-{{ strtolower($user->status) }}">{{ $user->status }}</span>
+                    <span class="status-badge status-{{ strtolower($user->status) }}">
+                        {{ $user->status === 'Active' ? 'Lengkap' : 'Belum Lengkap' }}
+                    </span>
                 </td>
                 <td style="color:var(--text-secondary)">{{ $user->phone_number ?: 'Tidak tersedia' }}</td>
                 <td style="color:var(--text-secondary)">{{ $user->last_active_at ? $user->last_active_at->diffForHumans() : 'Never' }}</td>

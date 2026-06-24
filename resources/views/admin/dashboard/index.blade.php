@@ -54,7 +54,6 @@
 
 {{-- ============ MODALS ============ --}}
 @include('admin.dashboard.modals.modal-detail')
-@include('admin.dashboard.modals.modal-edit')
 @include('admin.dashboard.modals.modal-all-pendaftar')
 
 @endsection
