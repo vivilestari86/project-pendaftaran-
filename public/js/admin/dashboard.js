@@ -4,9 +4,14 @@
 
     if (chartCanvas && window.Chart) {
         const labels = weeklyData.map((item) => item.label);
+        const dateLabels = weeklyData.map((item) => item.tanggal);
         const datasets = {
             pendaftar: weeklyData.map((item) => item.pendaftar),
             kelengkapan: weeklyData.map((item) => item.kelengkapan),
+        };
+        const modeLabels = {
+            pendaftar: 'Pendaftar',
+            kelengkapan: 'Data Lengkap',
         };
 
         const gradient = chartCanvas.getContext('2d').createLinearGradient(0, 0, 0, 360);
@@ -18,7 +23,7 @@
             data: {
                 labels,
                 datasets: [{
-                    label: 'Pendaftar',
+                    label: modeLabels.pendaftar,
                     data: datasets.pendaftar,
                     borderColor: '#2f6df6',
                     backgroundColor: gradient,
@@ -38,6 +43,15 @@
                         displayColors: false,
                         backgroundColor: '#111827',
                         padding: 12,
+                        callbacks: {
+                            title(tooltipItems) {
+                                const item = tooltipItems[0];
+                                return `${item.label} • ${dateLabels[item.dataIndex] ?? ''}`;
+                            },
+                            label(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            },
+                        },
                     },
                 },
                 scales: {
@@ -50,7 +64,7 @@
                         beginAtZero: true,
                         border: { display: false },
                         grid: { color: '#edf1f7' },
-                        ticks: { display: false, precision: 0 },
+                        ticks: { color: '#94a3b8', precision: 0, stepSize: 1 },
                     },
                 },
             },
@@ -61,7 +75,7 @@
                 document.querySelectorAll('.chart-toggle button').forEach((item) => item.classList.remove('active'));
                 button.classList.add('active');
                 const mode = button.dataset.mode || 'pendaftar';
-                chart.data.datasets[0].label = mode === 'kelengkapan' ? 'Kelengkapan' : 'Pendaftar';
+                chart.data.datasets[0].label = modeLabels[mode] || modeLabels.pendaftar;
                 chart.data.datasets[0].data = datasets[mode] || datasets.pendaftar;
                 chart.update();
             });
@@ -71,6 +85,8 @@
     const closeModal = (modal) => modal && modal.classList.remove('is-open');
     const detailModal = document.getElementById('modalDetailPendaftar');
     const editModal = document.getElementById('modalEditPendaftar');
+    const allPendaftarModal = document.getElementById('modalAllPendaftar');
+    const openAllPendaftarButton = document.getElementById('openAllPendaftarModal');
 
     document.querySelectorAll('.modal-close').forEach((button) => {
         button.addEventListener('click', () => closeModal(button.closest('.modal-overlay')));
@@ -139,6 +155,12 @@
         editButton && editButton.addEventListener('click', () => {
             closeModal(detailModal);
             editModal.classList.add('is-open');
+        });
+    }
+
+    if (allPendaftarModal && openAllPendaftarButton) {
+        openAllPendaftarButton.addEventListener('click', () => {
+            allPendaftarModal.classList.add('is-open');
         });
     }
 })();

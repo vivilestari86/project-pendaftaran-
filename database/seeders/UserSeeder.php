@@ -10,7 +10,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::query()->updateOrCreate(
+        User::withTrashed()->updateOrCreate(
             ['email' => 'admin@pendaftaran.test'],
             [
                 'name' => 'Admin Pendaftaran',
@@ -21,10 +21,11 @@ class UserSeeder extends Seeder
                 'status' => 'Active',
                 'last_active_at' => now(),
                 'terms_agreed' => true,
+                'deleted_at' => null,
             ],
         );
 
-        User::query()->updateOrCreate(
+        User::withTrashed()->updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'admin',
@@ -35,6 +36,7 @@ class UserSeeder extends Seeder
                 'status' => 'Active',
                 'last_active_at' => now(),
                 'terms_agreed' => true,
+                'deleted_at' => null,
             ],
         );
 

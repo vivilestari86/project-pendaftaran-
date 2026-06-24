@@ -27,10 +27,10 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                     7 Hari Terakhir
                 </button>
-                <button type="button" class="btn-primary">
+                <a href="{{ route('admin.dashboard.export-excel') }}" class="btn-primary">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                     Ekspor Data
-                </button>
+                </a>
             </div>
         </div>
 
@@ -55,6 +55,7 @@
 {{-- ============ MODALS ============ --}}
 @include('admin.dashboard.modals.modal-detail')
 @include('admin.dashboard.modals.modal-edit')
+@include('admin.dashboard.modals.modal-all-pendaftar')
 
 @endsection
 

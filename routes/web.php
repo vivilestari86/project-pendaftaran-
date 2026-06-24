@@ -23,32 +23,32 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
     Route::get('/dashboard', function () {
-        return auth()->user()->isAdmin()
-            ? redirect()->route('admin.dashboard')
-            : redirect()->route('user.dashboard');
-    })->name('dashboard');
-
-    Route::get('/app', fn () => redirect()->route('dashboard'));
-
-    Route::get('/user/dashboard', function () {
-        if (auth()->user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
+        if (! auth()->check()) {
+            return redirect()->route('login');
         }
 
         $user = auth()->user();
 
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         return view('user.dashboard', compact('user'));
     })->name('user.dashboard');
 
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
     Route::prefix('admin')->name('admin.')->middleware('is.admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/export-excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export-excel');
+        Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
+        Route::post('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
+        Route::get('/settings', [DashboardController::class, 'settings'])->name('settings');
         Route::get('/pendaftar/{pendaftar}/detail', [DashboardController::class, 'detail'])->name('pendaftar.detail');
         Route::get('/pendaftar/{pendaftar}/edit-form', [DashboardController::class, 'editForm'])->name('pendaftar.edit-form');
         Route::put('/pendaftar/{pendaftar}/update', [DashboardController::class, 'update'])->name('pendaftar.update');
 
-        Route::resource('manage-users', ManageUserController::class)->except(['show']);
+        Route::resource('manage-users', ManageUserController::class)->except(['show', 'create', 'store']);
     });
 });

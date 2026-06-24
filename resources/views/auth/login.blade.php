@@ -20,7 +20,7 @@
                 <img src="{{ asset('images/logo.png') }}" alt="Logo Politeknik Negeri Indramayu" class="logo-image">
             </div>
             <h1>Login</h1>
-            <p class="subtitle">Health Admin Console</p>
+            <p class="subtitle">Health Console</p>
 
             @if ($errors->any())
                 <div class="error">
@@ -67,7 +67,7 @@
 
         <div class="footer">
             <p>Kebijakan Privasi <span>•</span> Syarat Layanan <span>•</span> Keamanan</p>
-            <p>© 2024 AdminPortal Health Enterprise.</p>
+            <p>© 2026 Health Enterprise.</p>
         </div>
     </main>
 

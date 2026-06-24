@@ -29,5 +29,5 @@
         @endforelse
     </div>
 
-    <button type="button" class="panel-link-button">Lihat Semua Pendaftar</button>
+    <button type="button" class="panel-link-button" id="openAllPendaftarModal">Lihat Semua Pendaftar</button>
 </div>
