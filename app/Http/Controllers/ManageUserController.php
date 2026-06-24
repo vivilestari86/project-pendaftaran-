@@ -96,6 +96,16 @@ class ManageUserController extends Controller
 
     public function destroy(User $manageUser)
     {
+        if ($manageUser->is(auth()->user())) {
+            return redirect()->route('admin.manage-users.index')
+                ->with('error', 'Anda tidak bisa menghapus akun yang sedang digunakan.');
+        }
+
+        if ($manageUser->isAdmin() && User::where('role', 'admin')->count() <= 1) {
+            return redirect()->route('admin.manage-users.index')
+                ->with('error', 'Minimal harus ada satu akun admin aktif.');
+        }
+
         $manageUser->delete();
 
         return redirect()->route('admin.manage-users.index')

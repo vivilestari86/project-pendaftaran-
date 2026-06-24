@@ -11,6 +11,12 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        if (Auth::check()) {
+            return Auth::user()->isAdmin()
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('user.dashboard');
+        }
+
         return view('auth.login');
     }
 
@@ -58,6 +64,12 @@ class AuthController extends Controller
 
     public function showRegister()
     {
+        if (Auth::check()) {
+            return Auth::user()->isAdmin()
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('user.dashboard');
+        }
+
         return view('auth.register');
     }
 

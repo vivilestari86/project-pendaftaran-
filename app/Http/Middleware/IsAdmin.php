@@ -13,6 +13,10 @@ class IsAdmin
             return $next($request);
         }
 
-        return redirect('/')->with('error', 'Unauthorized');
+        if (auth()->check()) {
+            return redirect()->route('user.dashboard')->with('error', 'Halaman ini khusus admin.');
+        }
+
+        return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
     }
 }

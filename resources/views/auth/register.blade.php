@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Account - RSUD Healthcare</title>
+    <title>Registrasi User - Portal Pendaftaran</title>
     <link rel="stylesheet" href="{{ asset('css/register.css') }}">
 </head>
 <body>
@@ -11,22 +11,24 @@
         <!-- Left Section -->
         <div class="left-section">
             <div>
-                <div class="logo">⚕️</div>
+                <div class="logo">
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo Politeknik Negeri Indramayu" class="brand-logo">
+                </div>
                 <div class="tagline">
-                    <h1>Compassionate Care, Digital Precision.</h1>
-                    <p>Join the RSUD Regional Healthcare network to manage your health records, schedule appointments, and receive personalized medical updates.</p>
+                    <h1>Registrasi pengguna dengan alur yang sederhana.</h1>
+                    <p>Halaman ini hanya untuk pendaftaran user. Akun admin dikelola langsung oleh sistem.</p>
                 </div>
 
                 <div class="features">
                     <div class="feature">
                         <div class="feature-icon">🔐</div>
-                        <h3>Secure Records</h3>
-                        <p>HIPAA compliant data encryption for all patients.</p>
+                        <h3>Akun User</h3>
+                        <p>Form ini membuat akun dengan role user untuk akses aplikasi.</p>
                     </div>
                     <div class="feature">
                         <div class="feature-icon">⚡</div>
-                        <h3>Fast Track</h3>
-                        <p>Reduce waiting room time with pre-registration.</p>
+                        <h3>Akses Cepat</h3>
+                        <p>Setelah daftar, user bisa langsung login tanpa proses admin register.</p>
                     </div>
                 </div>
             </div>
@@ -38,10 +40,10 @@
                         <div class="avatar">👩</div>
                         <div class="avatar">👴</div>
                     </div>
-                    <span>Trusted by 50,000+ local residents</span>
+                    <span>Registrasi publik hanya tersedia untuk user</span>
                 </div>
                 <div class="footer">
-                    © 2024 RSUD Regional Healthcare. All rights reserved.
+                    © 2024 Portal Pendaftaran. All rights reserved.
                 </div>
             </div>
         </div>
@@ -49,8 +51,11 @@
         <!-- Right Section -->
         <div class="right-section">
             <div class="register-form">
-                <h2>Create Account</h2>
-                <p class="subtitle">Complete the form below to start your healthcare journey.</p>
+                <div class="register-logo-wrap">
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo Politeknik Negeri Indramayu" class="register-logo">
+                </div>
+                <h2>Registrasi User</h2>
+                <p class="subtitle">Isi form berikut untuk membuat akun user.</p>
 
                 @if ($errors->any())
                     <div class="error-message">
@@ -66,16 +71,16 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('register') }}">
+                <form method="POST" action="{{ route('register.submit') }}">
                     @csrf
 
                     <!-- Full Name -->
                     <div class="form-group">
-                        <label for="name">Full Name</label>
+                        <label for="name">Nama Lengkap</label>
                         <div class="input-wrapper">
                             <span class="input-icon">👤</span>
                             <input type="text" id="name" name="name" 
-                                placeholder="John Doe" 
+                                placeholder="Nama lengkap" 
                                 value="{{ old('name') }}" 
                                 required>
                         </div>
@@ -86,11 +91,11 @@
 
                     <!-- Email -->
                     <div class="form-group">
-                        <label for="email">Email Address</label>
+                        <label for="email">Alamat Email</label>
                         <div class="input-wrapper">
                             <span class="input-icon">✉️</span>
                             <input type="email" id="email" name="email" 
-                                placeholder="john@example.com" 
+                                placeholder="email@contoh.com" 
                                 value="{{ old('email') }}" 
                                 required>
                         </div>
@@ -101,7 +106,7 @@
 
                     <!-- Phone Number -->
                     <div class="form-group">
-                        <label for="phone_number">Phone Number</label>
+                        <label for="phone_number">Nomor Telepon</label>
                         <div class="input-wrapper">
                             <span class="input-icon">📱</span>
                             <input type="tel" id="phone_number" name="phone_number" 
@@ -124,7 +129,7 @@
                                 required>
                             <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
                         </div>
-                        <p class="password-note">Must be at least 8 characters.</p>
+                        <p class="password-note">Minimal 8 karakter.</p>
                         @error('password')
                             <span style="font-size: 12px; color: #dc3545;">{{ $message }}</span>
                         @enderror
@@ -132,7 +137,7 @@
 
                     <!-- Confirm Password -->
                     <div class="form-group">
-                        <label for="password_confirmation">Confirm Password</label>
+                        <label for="password_confirmation">Konfirmasi Password</label>
                         <div class="input-wrapper">
                             <span class="input-icon">🔒</span>
                             <input type="password" id="password_confirmation" name="password_confirmation" 
@@ -149,7 +154,7 @@
                     <div class="checkbox-group">
                         <input type="checkbox" id="terms" name="terms_agreed" required>
                         <label for="terms" class="checkbox-label">
-                            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a> of RSUD Regional Healthcare.
+                            Saya menyetujui <a href="#">Syarat Layanan</a> dan <a href="#">Kebijakan Privasi</a>.
                         </label>
                     </div>
                     @error('terms_agreed')
@@ -158,7 +163,7 @@
 
                     <!-- Register Button -->
                     <button type="submit" class="btn-register">
-                        Register Account <span>→</span>
+                        Daftar Akun <span>→</span>
                     </button>
 
                     <!-- Divider -->
@@ -168,12 +173,12 @@
 
                     <!-- Google Button -->
                     <button type="button" class="btn-google">
-                        <span>👤</span> Sign up with Google
+                        <span>👤</span> Daftar dengan Google
                     </button>
 
                     <!-- Login Link -->
                     <div class="login-link">
-                        Already have an account? <a href="{{ route('login') }}">Sign In</a>
+                        Sudah punya akun? <a href="{{ route('login') }}">Masuk</a>
                     </div>
                 </form>
             </div>

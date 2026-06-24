@@ -24,7 +24,21 @@ class UserSeeder extends Seeder
             ],
         );
 
-        if (User::where('email', '!=', 'admin@pendaftaran.test')->count() === 0) {
+        User::query()->updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'admin',
+                'phone_number' => '081234567891',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'status' => 'Active',
+                'last_active_at' => now(),
+                'terms_agreed' => true,
+            ],
+        );
+
+        if (User::whereNotIn('email', ['admin@pendaftaran.test', 'admin@gmail.com'])->count() === 0) {
             User::factory(12)->activeUser()->create();
 
             User::factory(4)->create([
