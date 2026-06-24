@@ -3,16 +3,19 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManageUserController;
+use App\Http\Controllers\UserDashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        return auth()->user()->isAdmin()
-            ? redirect()->route('admin.dashboard')
-            : redirect()->route('user.dashboard');
+    if (! auth()->check()) {
+        return redirect()->route('login');
     }
 
-    return redirect()->route('login');
+    if (auth()->user()->isAdmin()) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    return redirect()->route('user.dashboard');
 })->name('home');
 
 Route::middleware('guest')->group(function () {
@@ -25,19 +28,11 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::get('/dashboard', function () {
-        if (! auth()->check()) {
-            return redirect()->route('login');
-        }
-
-        $user = auth()->user();
-
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return view('user.dashboard', compact('user'));
-    })->name('user.dashboard');
+    Route::middleware('is.user')->group(function () {
+        Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+        Route::post('/dashboard/documents', [UserDashboardController::class, 'storeDocuments'])->name('user.documents.store');
+        Route::get('/dashboard/documents/{document}', [UserDashboardController::class, 'showDocument'])->name('user.documents.show');
+    });
 
     Route::prefix('admin')->name('admin.')->middleware('is.admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

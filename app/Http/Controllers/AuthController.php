@@ -55,13 +55,19 @@ class AuthController extends Controller
             ])->onlyInput('email');
         }
 
+        if ($user->isAdmin()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'Login admin belum tersedia. Silakan gunakan akun user.',
+            ])->onlyInput('email');
+        }
+
         $user->forceFill([
             'last_active_at' => now(),
         ])->save();
-
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', 'Selamat datang Admin!');
-        }
 
         return redirect()->route('user.dashboard')->with('success', 'Login berhasil!');
     }
@@ -81,12 +87,14 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'profesi' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone_number' => 'required|string|max:20',
             'password' => 'required|string|min:8|confirmed',
             'terms_agreed' => 'required|accepted',
         ], [
             'name.required' => 'Nama harus diisi',
+            'profesi.required' => 'Profesi harus diisi',
             'email.required' => 'Email harus diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',
@@ -100,6 +108,7 @@ class AuthController extends Controller
 
         User::create([
             'name' => $validated['name'],
+            'profesi' => $validated['profesi'],
             'email' => $validated['email'],
             'phone_number' => $validated['phone_number'],
             'password' => Hash::make($validated['password']),
