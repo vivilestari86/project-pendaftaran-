@@ -356,6 +356,87 @@ a {
     flex: 0 0 auto;
 }
 
+.document-dropzone {
+    position: relative;
+    min-height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;
+    border: 1px dashed #b8bdc9;
+    border-radius: 10px;
+    background: #f7f8fb;
+    color: var(--navy);
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.dropzone-input {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.dropzone-input:disabled {
+    cursor: wait;
+}
+
+.document-dropzone:hover,
+.document-dropzone.dz-drag-hover {
+    border-color: var(--navy);
+    background: #eef2ff;
+}
+
+.document-dropzone.is-uploading {
+    border-color: #846d05;
+    background: #fff9d8;
+    color: #846d05;
+}
+
+.document-dropzone.is-success {
+    border-color: #087443;
+    background: #ecfdf5;
+    color: #087443;
+}
+
+.document-dropzone.is-error {
+    border-color: #c81722;
+    background: #fff0f2;
+    color: #c81722;
+}
+
+.dropzone-message {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    padding: 14px 18px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.dropzone-message svg {
+    width: 24px;
+    height: 24px;
+}
+
+.dropzone-message span {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.dropzone-message small {
+    color: #555967;
+    font-size: 12px;
+    font-weight: 500;
+}
+
 .file-button {
     min-height: 48px;
     display: flex;

@@ -21,10 +21,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard User - Polindra Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css">
     <link rel="stylesheet" href="{{ asset('css/user-dashboard.css') }}">
 </head>
 <body>
@@ -59,7 +61,7 @@
             </header>
 
             <div class="content-grid">
-                <form class="documents-panel" action="{{ route('user.documents.store') }}" method="POST" enctype="multipart/form-data" aria-labelledby="required-documents-title">
+                <form class="documents-panel" aria-labelledby="required-documents-title">
                     @csrf
 
                     @if (session('success'))
@@ -117,38 +119,37 @@
                                 </div>
                                 <h3>{{ $document['title'] }}</h3>
                                 <p>{{ $document['description'] }}</p>
-                                @if ($uploadedDocumentList->isNotEmpty())
-                                    <div class="uploaded-files">
-                                        @foreach ($uploadedDocumentList as $savedDocument)
-                                            <a href="{{ route('user.documents.show', $savedDocument) }}" class="uploaded-file" target="_blank" rel="noopener">
-                                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 15.2-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4-7 7Z"/></svg>
-                                                {{ $savedDocument->original_name }}
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                @endif
-                                <div class="selected-file" hidden>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2 20 8v14H4V2h10Zm-1 2H6v16h12V9h-5V4Zm-4 9h6v2H9v-2Zm0 3h6v2H9v-2Z"/></svg>
-                                    <ul></ul>
+                                <div class="uploaded-files" data-uploaded-files {{ $uploadedDocumentList->isEmpty() ? 'hidden' : '' }}>
+                                    @foreach ($uploadedDocumentList as $savedDocument)
+                                        <a href="{{ route('user.documents.show', $savedDocument) }}" class="uploaded-file" target="_blank" rel="noopener">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 15.2-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4-7 7Z"/></svg>
+                                            {{ $savedDocument->original_name }}
+                                        </a>
+                                    @endforeach
                                 </div>
-                                <label class="file-button">
+                                <div
+                                    class="document-dropzone"
+                                    data-upload-url="{{ route('user.documents.upload', $key) }}"
+                                    data-document-title="{{ $document['title'] }}"
+                                >
                                     <input
+                                        class="dropzone-input"
                                         type="file"
-                                        name="documents[{{ $key }}]{{ $isMultiple ? '[]' : '' }}"
                                         accept=".pdf,.jpg,.jpeg,.png"
-                                        data-multiple="{{ $isMultiple ? 'true' : 'false' }}"
-                                        data-max-files="{{ $document['max_files'] ?? 1 }}"
-                                        {{ $isMultiple ? 'multiple' : '' }}
+                                        aria-label="Upload {{ $document['title'] }}"
                                     >
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
-                                    <span>{{ $uploadedDocument ? 'Ganti File' : 'Pilih File' }}</span>
-                                </label>
+                                    <div class="dropzone-message">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v8h3l-4 4-4-4h3V5Zm-5 14h12v2H6v-2Z"/></svg>
+                                        <span>{{ $uploadedDocument ? 'Ganti File' : 'Upload File' }}</span>
+                                        <small>PDF, JPG, PNG</small>
+                                    </div>
+                                </div>
                             </article>
                         @endforeach
                     </div>
 
                     <div class="submit-row">
-                        <button type="submit" class="submit-button">
+                        <button type="button" class="submit-button" data-complete-documents>
                             Kirim Dokumen
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 7 7-7 7-1.4-1.4 4.6-4.6H3v-2h14.2l-4.6-4.6L14 5Z"/></svg>
                         </button>
@@ -204,60 +205,184 @@
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
     <script>
-        const selectedFilesByInput = new WeakMap();
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const completeButton = document.querySelector('[data-complete-documents]');
 
-        document.querySelectorAll('.file-button input[type="file"]').forEach((input) => {
-            input.addEventListener('change', () => {
-                if (!input.files.length) {
+        const renderUploadedFile = (card, uploadedDocument) => {
+            const uploadedFiles = card.querySelector('[data-uploaded-files]');
+            const link = document.createElement('a');
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+            link.href = uploadedDocument.url;
+            link.className = 'uploaded-file';
+            link.target = '_blank';
+            link.rel = 'noopener';
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('aria-hidden', 'true');
+            path.setAttribute('d', 'm9.5 15.2-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4-7 7Z');
+            icon.appendChild(path);
+            link.appendChild(icon);
+            link.append(uploadedDocument.name);
+
+            uploadedFiles.replaceChildren(link);
+            uploadedFiles.hidden = false;
+        };
+
+        const setDropzoneState = (dropzoneElement, state, message) => {
+            const label = dropzoneElement.querySelector('.dropzone-message span');
+
+            dropzoneElement.classList.remove('is-uploading', 'is-success', 'is-error');
+
+            if (state) {
+                dropzoneElement.classList.add(state);
+            }
+
+            label.textContent = message;
+        };
+
+        const parseUploadError = (response) => {
+            if (typeof response === 'string') {
+                return response;
+            }
+
+            if (response?.errors) {
+                const firstError = Object.values(response.errors).flat()[0];
+
+                if (firstError) {
+                    return firstError;
+                }
+            }
+
+            return response?.message || 'Upload gagal. Coba pilih file lain.';
+        };
+
+        const initNativeDropzone = (dropzoneElement) => {
+            const card = dropzoneElement.closest('.document-card');
+            const message = dropzoneElement.querySelector('.dropzone-message span');
+            const originalLabel = message.textContent;
+            const input = dropzoneElement.querySelector('.dropzone-input');
+
+            dropzoneElement.setAttribute('role', 'button');
+            dropzoneElement.setAttribute('tabindex', '0');
+
+            const uploadFile = async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                setDropzoneState(dropzoneElement, 'is-uploading', 'Mengupload...');
+                input.disabled = true;
+
+                const response = await fetch(dropzoneElement.dataset.uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                    credentials: 'same-origin',
+                });
+
+                const payload = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(parseUploadError(payload));
+                }
+
+                setDropzoneState(dropzoneElement, 'is-success', 'Upload Berhasil');
+                renderUploadedFile(card, payload.document);
+                input.value = '';
+                input.disabled = false;
+            };
+
+            const handleFile = (file) => {
+                if (!file) {
                     return;
                 }
 
-                const card = input.closest('.document-card');
-                const selectedFile = card.querySelector('.selected-file');
-                const selectedFileList = selectedFile.querySelector('ul');
-                const buttonLabel = card.querySelector('.file-button span');
-                const isMultiple = input.dataset.multiple === 'true';
-                const maxFiles = Number(input.dataset.maxFiles || 1);
+                uploadFile(file).catch((error) => {
+                    setDropzoneState(dropzoneElement, 'is-error', error.message);
+                    input.value = '';
+                    input.disabled = false;
 
-                const renderSelectedFiles = (files) => {
-                    selectedFileList.innerHTML = '';
+                    window.setTimeout(() => {
+                        setDropzoneState(dropzoneElement, '', originalLabel);
+                    }, 3000);
+                });
+            };
 
-                    files.forEach((file, index) => {
-                        const item = document.createElement('li');
-                        const link = document.createElement('a');
+            dropzoneElement.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    input.click();
+                }
+            });
+            input.addEventListener('change', () => handleFile(input.files[0]));
+            dropzoneElement.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                dropzoneElement.classList.add('dz-drag-hover');
+            });
+            dropzoneElement.addEventListener('dragleave', () => {
+                dropzoneElement.classList.remove('dz-drag-hover');
+            });
+            dropzoneElement.addEventListener('drop', (event) => {
+                event.preventDefault();
+                dropzoneElement.classList.remove('dz-drag-hover');
+                handleFile(event.dataTransfer.files[0]);
+            });
+        };
 
-                        link.href = URL.createObjectURL(file);
-                        link.target = '_blank';
-                        link.rel = 'noopener';
-                        link.textContent = `${index + 1}. ${file.name}`;
+        const initDropzoneJs = (dropzoneElement) => {
+            const card = dropzoneElement.closest('.document-card');
+            const message = dropzoneElement.querySelector('.dropzone-message span');
+            const originalLabel = message.textContent;
 
-                        item.appendChild(link);
-                        selectedFileList.appendChild(item);
+            new Dropzone(dropzoneElement, {
+                url: dropzoneElement.dataset.uploadUrl,
+                paramName: 'file',
+                maxFiles: 1,
+                maxFilesize: 5,
+                acceptedFiles: '.pdf,.jpg,.jpeg,.png',
+                uploadMultiple: false,
+                disablePreviews: true,
+                clickable: true,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                dictInvalidFileType: 'Format file harus PDF, JPG, atau PNG.',
+                dictFileTooBig: 'Ukuran file maksimal 5MB.',
+                init() {
+                    this.on('addedfile', () => {
+                        setDropzoneState(dropzoneElement, 'is-uploading', 'Mengupload...');
                     });
 
-                    selectedFile.hidden = false;
-                };
+                    this.on('success', (file, response) => {
+                        setDropzoneState(dropzoneElement, 'is-success', 'Upload Berhasil');
+                        renderUploadedFile(card, response.document);
+                        this.removeAllFiles(true);
+                    });
 
-                if (isMultiple) {
-                    const previousFiles = selectedFilesByInput.get(input) || [];
-                    const nextFiles = [...previousFiles, ...Array.from(input.files)].slice(0, maxFiles);
-                    const transfer = new DataTransfer();
+                    this.on('error', (file, response) => {
+                        setDropzoneState(dropzoneElement, 'is-error', parseUploadError(response));
+                        this.removeAllFiles(true);
 
-                    nextFiles.forEach((file) => transfer.items.add(file));
-                    input.files = transfer.files;
-                    selectedFilesByInput.set(input, nextFiles);
-
-                    renderSelectedFiles(nextFiles);
-                    buttonLabel.textContent = nextFiles.length >= maxFiles ? 'Maksimal 2 File' : 'Tambah File';
-                    return;
-                }
-
-                const selectedFiles = Array.from(input.files);
-                selectedFilesByInput.set(input, selectedFiles);
-                renderSelectedFiles(selectedFiles);
-                buttonLabel.textContent = 'Ganti Pilihan';
+                        window.setTimeout(() => {
+                            setDropzoneState(dropzoneElement, '', originalLabel);
+                        }, 3000);
+                    });
+                },
             });
+        };
+
+        document.querySelectorAll('.document-dropzone').forEach((dropzoneElement) => {
+            initNativeDropzone(dropzoneElement);
+        });
+
+        completeButton.addEventListener('click', () => {
+            window.location.reload();
         });
     </script>
 </body>

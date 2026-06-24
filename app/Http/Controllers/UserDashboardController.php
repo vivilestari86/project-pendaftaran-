@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserDocument;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -136,10 +137,7 @@ class UserDashboardController extends Controller
             UserDocument::where('user_id', $user->id)
                 ->where('document_type', $key)
                 ->get()
-                ->each(function (UserDocument $existingDocument): void {
-                    Storage::disk('public')->delete($existingDocument->file_path);
-                    $existingDocument->delete();
-                });
+                ->each(fn (UserDocument $existingDocument) => $this->deleteDocumentFile($existingDocument));
 
             foreach (array_values($files) as $index => $file) {
                 $path = $file->store("user-documents/{$user->id}", 'public');
@@ -166,6 +164,53 @@ class UserDashboardController extends Controller
             ->with('success', "{$savedCount} dokumen berhasil disimpan.");
     }
 
+    public function uploadDocument(Request $request, string $documentType): JsonResponse
+    {
+        abort_unless(array_key_exists($documentType, self::DOCUMENTS), 404);
+
+        $document = self::DOCUMENTS[$documentType];
+
+        $validated = $request->validate([
+            'file' => "required|file|mimes:{$document['mimes']}|max:5120",
+        ], [
+            'file.required' => 'Pilih dokumen untuk diupload.',
+            'file.file' => 'Dokumen harus berupa file yang valid.',
+            'file.mimes' => 'Format dokumen tidak sesuai.',
+            'file.max' => 'Ukuran dokumen maksimal 5MB.',
+        ]);
+
+        $user = Auth::user();
+
+        UserDocument::where('user_id', $user->id)
+            ->where('document_type', $documentType)
+            ->get()
+            ->each(fn (UserDocument $existingDocument) => $this->deleteDocumentFile($existingDocument));
+
+        $file = $validated['file'];
+        $path = $file->store("user-documents/{$user->id}", 'public');
+
+        $savedDocument = UserDocument::create([
+            'user_id' => $user->id,
+            'document_type' => $documentType,
+            'document_slot' => 1,
+            'document_name' => $document['title'],
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+            'file_size' => $file->getSize(),
+            'status' => 'uploaded',
+            'uploaded_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => "{$document['title']} berhasil diupload.",
+            'document' => [
+                'name' => $savedDocument->original_name,
+                'url' => route('user.documents.show', $savedDocument),
+            ],
+        ]);
+    }
+
     public function showDocument(UserDocument $document): BinaryFileResponse
     {
         abort_unless($document->user_id === Auth::id(), 403);
@@ -178,5 +223,11 @@ class UserDashboardController extends Controller
                 'Content-Disposition' => 'inline; filename="' . addslashes($document->original_name) . '"',
             ],
         );
+    }
+
+    private function deleteDocumentFile(UserDocument $document): void
+    {
+        Storage::disk('public')->delete($document->file_path);
+        $document->delete();
     }
 }
