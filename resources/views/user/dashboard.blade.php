@@ -226,6 +226,13 @@
             uploadProgress.textContent = `${uploadedCount} dari ${totalDocuments} dokumen berhasil diupload.`;
         };
 
+        document.querySelectorAll('.upload-alert').forEach((alertBox) => {
+            window.setTimeout(() => {
+                alertBox.classList.add('is-hiding');
+                window.setTimeout(() => alertBox.remove(), 300);
+            }, 2000);
+        });
+
         const renderUploadedFile = (card, uploadedDocument) => {
             const uploadedFiles = card.querySelector('[data-uploaded-files]');
             const wasEmpty = uploadedFiles.hidden;
