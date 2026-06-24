@@ -164,6 +164,7 @@ a {
     border-radius: 8px;
     font-size: 15px;
     font-weight: 700;
+    transition: opacity .3s ease, transform .3s ease, margin .3s ease;
 }
 
 .upload-alert.success {
@@ -176,6 +177,12 @@ a {
     border: 1px solid #fecaca;
     background: #fef2f2;
     color: #991b1b;
+}
+
+.upload-alert.is-hiding {
+    opacity: 0;
+    transform: translateY(-6px);
+    margin-bottom: 0;
 }
 
 .panel-heading {

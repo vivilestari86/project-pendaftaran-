@@ -61,6 +61,7 @@ class ManageUserController extends Controller
             'uploadedDocumentCount' => $this->uploadedDocumentCount($manageUser),
             'isDocumentComplete' => $this->isDocumentComplete($manageUser),
             'isDocumentVerified' => $this->isDocumentVerified($manageUser),
+            'profilePhotoUrl' => $this->profilePhotoUrl($manageUser),
             'documentCategories' => collect(self::REQUIRED_DOCUMENTS)->map(function (string $label, string $type) use ($manageUser) {
                 return [
                     'type' => $type,
@@ -196,5 +197,20 @@ class ManageUserController extends Controller
             ->where('status', 'verified')
             ->distinct('document_type')
             ->count('document_type') >= count(self::REQUIRED_DOCUMENTS);
+    }
+
+    private function profilePhotoUrl(User $user): ?string
+    {
+        $pasFoto = $user->documents
+            ->where('document_type', 'pas_foto')
+            ->filter(fn (UserDocument $document) => str_starts_with((string) $document->mime_type, 'image/'))
+            ->sortByDesc('uploaded_at')
+            ->first();
+
+        if ($pasFoto && Storage::disk('public')->exists($pasFoto->file_path)) {
+            return route('admin.manage-users.documents.show', [$user, $pasFoto]);
+        }
+
+        return $user->profile_photo_url;
     }
 }

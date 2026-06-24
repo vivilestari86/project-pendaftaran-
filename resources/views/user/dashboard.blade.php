@@ -210,6 +210,13 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         const completeButton = document.querySelector('[data-complete-documents]');
 
+        document.querySelectorAll('.upload-alert').forEach((alertBox) => {
+            window.setTimeout(() => {
+                alertBox.classList.add('is-hiding');
+                window.setTimeout(() => alertBox.remove(), 300);
+            }, 2000);
+        });
+
         const renderUploadedFile = (card, uploadedDocument) => {
             const uploadedFiles = card.querySelector('[data-uploaded-files]');
             const link = document.createElement('a');
