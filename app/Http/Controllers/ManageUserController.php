@@ -13,13 +13,13 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class ManageUserController extends Controller
 {
     private const REQUIRED_DOCUMENTS = [
-        'surat_lamaran',
-        'cv_resume',
-        'ijazah',
-        'transkrip',
-        'ktp',
-        'surat_keterangan_sehat',
-        'pas_foto',
+        'surat_lamaran' => 'Surat Lamaran',
+        'cv_resume' => 'CV / Resume',
+        'ijazah' => 'Scan Ijazah',
+        'transkrip' => 'Transkrip Nilai',
+        'ktp' => 'KTP',
+        'surat_keterangan_sehat' => 'Surat Keterangan Sehat',
+        'pas_foto' => 'Pas Foto',
     ];
 
     public function index(Request $request)
@@ -61,10 +61,16 @@ class ManageUserController extends Controller
             'uploadedDocumentCount' => $this->uploadedDocumentCount($manageUser),
             'isDocumentComplete' => $this->isDocumentComplete($manageUser),
             'isDocumentVerified' => $this->isDocumentVerified($manageUser),
-            'uploadedDocuments' => $manageUser->documents
-                ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
-                ->sortBy('document_type')
-                ->values(),
+            'documentCategories' => collect(self::REQUIRED_DOCUMENTS)->map(function (string $label, string $type) use ($manageUser) {
+                return [
+                    'type' => $type,
+                    'label' => $label,
+                    'documents' => $manageUser->documents
+                        ->where('document_type', $type)
+                        ->sortBy('document_slot')
+                        ->values(),
+                ];
+            }),
         ]);
     }
 
@@ -93,7 +99,7 @@ class ManageUserController extends Controller
         }
 
         $manageUser->documents()
-            ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
             ->update(['status' => 'verified']);
 
         return redirect()->route('admin.manage-users.edit', $manageUser)
@@ -136,7 +142,7 @@ class ManageUserController extends Controller
     {
         return UserDocument::query()
             ->select('user_id')
-            ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
             ->groupBy('user_id')
             ->havingRaw('COUNT(DISTINCT document_type) >= ?', [count(self::REQUIRED_DOCUMENTS)])
             ->pluck('user_id');
@@ -146,7 +152,7 @@ class ManageUserController extends Controller
     {
         return UserDocument::query()
             ->select('user_id')
-            ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
             ->where('status', 'verified')
             ->groupBy('user_id')
             ->havingRaw('COUNT(DISTINCT document_type) >= ?', [count(self::REQUIRED_DOCUMENTS)])
@@ -157,14 +163,14 @@ class ManageUserController extends Controller
     {
         if ($user->relationLoaded('documents')) {
             return $user->documents
-                ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+                ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
                 ->pluck('document_type')
                 ->unique()
                 ->count();
         }
 
         return $user->documents()
-            ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
             ->distinct('document_type')
             ->count('document_type');
     }
@@ -178,7 +184,7 @@ class ManageUserController extends Controller
     {
         if ($user->relationLoaded('documents')) {
             return $user->documents
-                ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+                ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
                 ->where('status', 'verified')
                 ->pluck('document_type')
                 ->unique()
@@ -186,7 +192,7 @@ class ManageUserController extends Controller
         }
 
         return $user->documents()
-            ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
             ->where('status', 'verified')
             ->distinct('document_type')
             ->count('document_type') >= count(self::REQUIRED_DOCUMENTS);
