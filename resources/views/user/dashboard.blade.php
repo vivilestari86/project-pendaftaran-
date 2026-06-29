@@ -1,5 +1,6 @@
 @php
     $requiredDocuments = array_merge($specialDocuments, $documents);
+    $examCardAvailable = ! empty($examCard);
     $uploadedCount = collect(array_keys($requiredDocuments))
         ->filter(fn (string $key): bool => $uploadedDocuments->has($key))
         ->count();
@@ -27,8 +28,10 @@
         ],
         [
             'title' => 'Uji Kompetensi',
-            'description' => $isDocumentVerified ? 'Menunggu kartu uji kompetensi tersedia' : 'Tahap uji kompetensi akhir',
-            'state' => $isDocumentVerified ? 'current' : 'pending',
+            'description' => $examCardAvailable
+                ? 'Kartu ujian sudah tersedia untuk diunduh'
+                : ($isDocumentVerified ? 'Menunggu penjadwalan ujian dari admin' : 'Tahap uji kompetensi akhir'),
+            'state' => $examCardAvailable ? 'done' : ($isDocumentVerified ? 'current' : 'pending'),
         ],
     ];
 @endphp
@@ -345,17 +348,30 @@
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 19 9v12H5V3h8Zm0 2H7v14h10V10h-4V5Zm-1 7 3 3h-2v3h-2v-3H9l3-3Z"/></svg>
                                     <h3>Kartu Uji Kompetensi</h3>
                                 </div>
-                                <p>Verifikasi admin selesai. Unduh kartu uji kompetensi melalui tombol di bawah setelah kartu tersedia.</p>
-                                <button
-                                    type="button"
-                                    class="exam-download-button"
-                                    disabled
-                                    aria-disabled="true"
-                                    title="Format kartu uji kompetensi belum tersedia"
-                                >
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v8l3-3 1.4 1.4L12 15.8l-5.4-5.4L8 9l3 3V4ZM5 18h14v2H5v-2Z"/></svg>
-                                    Unduh Kartu Uji Kompetensi
-                                </button>
+                                <p>
+                                    @if ($examCardAvailable)
+                                        Jadwal ujian kamu sudah tersedia. Unduh kartu ujian untuk melihat nomor ujian, sesi, ruangan, dan kursi.
+                                    @else
+                                        Verifikasi admin selesai. Kartu ujian akan aktif setelah admin menyelesaikan penjadwalan ujian.
+                                    @endif
+                                </p>
+                                @if ($examCardAvailable)
+                                    <a href="{{ route('user.exam-card.download') }}" class="exam-download-button is-ready">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v8l3-3 1.4 1.4L12 15.8l-5.4-5.4L8 9l3 3V4ZM5 18h14v2H5v-2Z"/></svg>
+                                        Unduh Kartu Uji Kompetensi PDF
+                                    </a>
+                                @else
+                                    <button
+                                        type="button"
+                                        class="exam-download-button"
+                                        disabled
+                                        aria-disabled="true"
+                                        title="Kartu ujian belum tersedia"
+                                    >
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v8l3-3 1.4 1.4L12 15.8l-5.4-5.4L8 9l3 3V4ZM5 18h14v2H5v-2Z"/></svg>
+                                        Unduh Kartu Uji Kompetensi
+                                    </button>
+                                @endif
                             </div>
                         @endif
                     </section>
@@ -378,6 +394,10 @@
         const uploadProgress = document.querySelector('[data-upload-progress]');
 
         const updateUploadProgress = () => {
+            if (!uploadProgress) {
+                return;
+            }
+
             const uploadedCount = Number(uploadProgress.dataset.uploadedCount);
             const totalDocuments = Number(uploadProgress.dataset.totalDocuments);
 
@@ -434,7 +454,7 @@
 
             uploadedFiles.hidden = false;
 
-            if (wasEmpty) {
+            if (wasEmpty && uploadProgress) {
                 uploadProgress.dataset.uploadedCount = Number(uploadProgress.dataset.uploadedCount) + 1;
                 updateUploadProgress();
             }

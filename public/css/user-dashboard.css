@@ -737,6 +737,23 @@ a {
     cursor: not-allowed;
 }
 
+.exam-download-button.is-ready {
+    border-color: #1d4ed8;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 16px 30px rgba(37, 99, 235, 0.24);
+}
+
+.exam-download-button.is-ready svg {
+    color: #ffffff;
+}
+
+.exam-download-button.is-ready:hover {
+    filter: brightness(1.03);
+}
+
 .portal-footer {
     display: flex;
     align-items: center;

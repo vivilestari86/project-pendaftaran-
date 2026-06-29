@@ -38,15 +38,6 @@ class UserSeeder extends Seeder
                 'terms_agreed' => true,
                 'deleted_at' => null,
             ],
-        );
-
-        if (User::whereNotIn('email', ['admin@pendaftaran.test', 'admin@gmail.com'])->count() === 0) {
-            User::factory(12)->activeUser()->create();
-
-            User::factory(4)->create([
-                'status' => 'Inactive',
-                'last_active_at' => now()->subDays(30),
-            ]);
-        }
+        );         
     }
 }

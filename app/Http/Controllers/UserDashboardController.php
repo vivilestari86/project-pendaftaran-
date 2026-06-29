@@ -2,20 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Exam;
+use App\Models\ExamRoom;
+use App\Models\ExamSession;
+use App\Models\User;
 use App\Models\UserDocument;
 use App\Support\ProfessionRequirements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class UserDashboardController extends Controller
 {
+    private const EXAM_CENTER = 'Politeknik Negeri Indramayu';
+    private const EXAM_LOCATION = 'Polindra - Gedung Student Center';
+    private const EXAM_ADDRESS = 'Jl. Raya Lohbener Lama No. 8, Kec. Lohbener, Kabupaten Indramayu, Jawa Barat';
+
     private const DOCUMENTS = [
         'surat_lamaran' => [
             'title' => 'Surat Lamaran',
@@ -78,12 +89,14 @@ class UserDashboardController extends Controller
 
     public function index(): View
     {
+        /** @var User $user */
         $user = Auth::user();
         $specialRequirement = ProfessionRequirements::for($user->profesi);
         $uploadedDocuments = $user
             ->documents()
             ->get()
             ->groupBy('document_type');
+        $examCard = $this->resolveExamCardForUser($user);
 
         return view('user.dashboard', [
             'documents' => self::DOCUMENTS,
@@ -91,7 +104,34 @@ class UserDashboardController extends Controller
             'specialDocuments' => $specialRequirement['documents'] ?? [],
             'uploadedDocuments' => $uploadedDocuments,
             'documentsSubmitted' => $user->documents_submitted_at !== null,
+            'examCard' => $examCard,
         ]);
+    }
+
+    public function downloadExamCard(): Response|RedirectResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $examCard = $this->resolveExamCardForUser($user);
+
+        if ($examCard === null) {
+            return redirect()
+                ->to(route('user.dashboard') . '#dashboard-top')
+                ->withErrors(['exam_card' => 'Kartu ujian belum tersedia. Tunggu verifikasi dan penjadwalan admin.']);
+        }
+
+        $fileName = 'kartu-uji-kompetensi-' . Str::slug($user->name ?: 'peserta') . '.pdf';
+        $pdf = $this->buildExamCardPdf($user, $examCard);
+
+        return response(
+            $pdf,
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                'Content-Length' => (string) strlen($pdf),
+            ],
+        );
     }
 
     public function storeDocuments(Request $request): RedirectResponse
@@ -318,4 +358,319 @@ class UserDashboardController extends Controller
     {
         return array_merge(self::DOCUMENTS, ProfessionRequirements::documentsFor($profession));
     }
+
+    private function resolveExamCardForUser(User $user): ?array
+    {
+        if (! $this->isEligibleForExamCard($user)) {
+            return null;
+        }
+
+        $eligibleUsers = $this->eligibleUsersForExamCard();
+        $position = $eligibleUsers->search(fn (User $candidate): bool => $candidate->id === $user->id);
+
+        if ($position === false) {
+            return null;
+        }
+
+        $slotPointer = (int) $position;
+
+        foreach ($this->examSlots() as $slot) {
+            if ($slotPointer < $slot['capacity']) {
+                $seatNumber = $slotPointer + 1;
+
+                return [
+                    'exam' => $slot['exam'],
+                    'session' => $slot['session'],
+                    'room' => $slot['room'],
+                    'date' => $slot['date'],
+                    'seat_number' => $seatNumber,
+                    'exam_number' => $this->examNumber(
+                        $slot['exam'],
+                        $slot['session'],
+                        $slot['room'],
+                        $user,
+                        $seatNumber,
+                    ),
+                    'downloaded_at' => now(),
+                ];
+            }
+
+            $slotPointer -= $slot['capacity'];
+        }
+
+        return null;
+    }
+
+    private function isEligibleForExamCard(User $user): bool
+    {
+        if ($user->status !== 'Active' || $user->documents_submitted_at === null) {
+            return false;
+        }
+
+        $requiredDocumentTypes = array_keys($this->documentsFor($user->profesi));
+        $uploadedDocuments = $user->relationLoaded('documents')
+            ? $user->documents
+            : $user->documents()->get();
+
+        $verifiedCount = $uploadedDocuments
+            ->whereIn('document_type', $requiredDocumentTypes)
+            ->where('status', 'verified')
+            ->pluck('document_type')
+            ->unique()
+            ->count();
+
+        return $verifiedCount === count($requiredDocumentTypes);
+    }
+
+    private function eligibleUsersForExamCard()
+    {
+        return User::query()
+            ->where('role', 'user')
+            ->where('status', 'Active')
+            ->whereNotNull('documents_submitted_at')
+            ->with('documents')
+            ->get()
+            ->filter(fn (User $user): bool => $this->isEligibleForExamCard($user))
+            ->sortBy([
+                ['documents_submitted_at', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values();
+    }
+
+    private function examSlots()
+    {
+        return Exam::query()
+            ->with(['sessions', 'rooms', 'room'])
+            ->orderBy('start_date')
+            ->orderBy('id')
+            ->get()
+            ->flatMap(function (Exam $exam) {
+                $rooms = $exam->rooms
+                    ->whenEmpty(fn ($collection) => $exam->room ? $collection->push($exam->room) : $collection)
+                    ->sortBy('name')
+                    ->values();
+
+                return $exam->sessions->flatMap(function (ExamSession $session) use ($exam, $rooms) {
+                    return $this->expandExamDates($exam)->flatMap(function (Carbon $date) use ($exam, $session, $rooms) {
+                        return $rooms->map(function (ExamRoom $room) use ($exam, $session, $date) {
+                            return [
+                                'exam' => $exam,
+                                'session' => $session,
+                                'room' => $room,
+                                'date' => $date->copy(),
+                                'capacity' => max((int) $room->capacity, 0),
+                            ];
+                        });
+                    });
+                });
+            })
+            ->filter(fn (array $slot): bool => $slot['capacity'] > 0)
+            ->values();
+    }
+
+    private function examNumber(
+        Exam $exam,
+        ExamSession $session,
+        ExamRoom $room,
+        User $user,
+        int $seatNumber,
+    ): string {
+        return sprintf(
+            'UK-%03d-%02d-%03d-%03d',
+            $exam->id,
+            $session->order,
+            $room->id,
+            $seatNumber + ($user->id % 100)
+        );
+    }
+
+    private function buildExamCardPdf(User $user, array $examCard): string
+    {
+        $date = $examCard['date']->copy()->locale('id');
+        $dayName = Str::upper($date->translatedFormat('l'));
+        $dateLabel = Str::upper($date->translatedFormat('d F Y'));
+        $timeLabel = $examCard['session']->start_time?->format('H:i') . ' - ' . $examCard['session']->end_time?->format('H:i') . ' WIB';
+        $roomLabel = $this->roomDisplayName($examCard['room']);
+        $locationLabel = $this->locationLabel($examCard['room']);
+        $headingColor = [0, 0, 0];
+        $textColor = [0, 0, 0];
+        $mutedColor = [0, 0, 0];
+        $lineColor = [0.82, 0.82, 0.82];
+
+        $stream = [];
+        $stream[] = '1 1 1 rg 16 16 563 810 re f';
+        $stream[] = '0 0 0 RG 0.8 w 16 16 563 810 re S';
+        $stream[] = '0 0 0 rg 16 816 563 10 re f';
+
+        $stream[] = $this->pdfText(34, 784, 'KARTU UJI KOMPETENSI', 21, true, $headingColor);
+        $stream[] = $this->pdfText(34, 762, 'Polindra Portal', 10, false, $mutedColor);
+        $stream[] = $this->pdfText(448, 784, 'TERVERIFIKASI', 10, true, $headingColor);
+        $stream[] = $this->pdfLine(34, 746, 541, 746, $lineColor);
+
+        $stream[] = $this->pdfSectionHeader(34, 718, 'DATA PESERTA', $headingColor, $lineColor);
+        $stream[] = $this->pdfKeyValue(42, 690, 'NOMOR UJIAN', $examCard['exam_number'], 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 665, 'NAMA PESERTA', $user->name, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 640, 'EMAIL', $user->email ?? '-', 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 615, 'NOMOR HP', $user->phone_number ?? '-', 52, $headingColor, $textColor, 100, 114);
+
+        $stream[] = $this->pdfSectionHeader(34, 570, 'JADWAL UJI KOMPETENSI', $headingColor, $lineColor);
+        $stream[] = $this->pdfKeyValue(42, 542, 'NAMA UJIAN', $examCard['exam']->name, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 517, 'HARI', $dayName, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 492, 'TANGGAL', $dateLabel, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 467, 'JAM', $timeLabel, 52, $headingColor, $textColor, 100, 114);
+
+        $stream[] = $this->pdfSectionHeader(34, 422, 'LOKASI UJI KOMPETENSI', $headingColor, $lineColor);
+        $stream[] = $this->pdfKeyValue(42, 394, 'PUSAT UJI', self::EXAM_CENTER, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 369, 'LOKASI', $locationLabel, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 344, 'RUANG', $roomLabel, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 319, 'NOMOR KURSI', (string) $examCard['seat_number'], 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfKeyValue(42, 294, 'ALAMAT', self::EXAM_ADDRESS, 52, $headingColor, $textColor, 100, 114);
+
+        $stream[] = $this->pdfSectionHeader(34, 226, 'CATATAN PENTING', $headingColor, $lineColor);
+        $stream[] = $this->pdfBullet(48, 198, 'Peserta wajib hadir 60 menit sebelum ujian dimulai.', $mutedColor);
+        $stream[] = $this->pdfBullet(48, 180, 'Bawa kartu ujian ini dan identitas diri saat pelaksanaan ujian.', $mutedColor);
+        $stream[] = $this->pdfBullet(48, 162, 'Status peserta: TERVERIFIKASI DAN TERJADWAL.', $mutedColor);
+
+        return $this->wrapPdfDocument(implode("\n", array_filter($stream)));
+    }
+
+    private function wrapPdfDocument(string $content): string
+    {
+        $objects = [
+            1 => '<< /Type /Catalog /Pages 2 0 R >>',
+            2 => '<< /Type /Pages /Kids [5 0 R] /Count 1 >>',
+            3 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+            4 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
+            5 => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>',
+            6 => '<< /Length ' . strlen($content) . " >>\nstream\n" . $content . "\nendstream",
+        ];
+
+        $pdf = "%PDF-1.4\n";
+        $offsets = [0];
+
+        foreach ($objects as $id => $object) {
+            $offsets[$id] = strlen($pdf);
+            $pdf .= $id . " 0 obj\n" . $object . "\nendobj\n";
+        }
+
+        $xrefOffset = strlen($pdf);
+        $pdf .= "xref\n0 " . (count($objects) + 1) . "\n";
+        $pdf .= "0000000000 65535 f \n";
+
+        foreach (array_keys($objects) as $id) {
+            $pdf .= sprintf('%010d 00000 n ', $offsets[$id]) . "\n";
+        }
+
+        $pdf .= "trailer\n<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
+        $pdf .= "startxref\n{$xrefOffset}\n%%EOF";
+
+        return $pdf;
+    }
+
+    private function pdfKeyValue(
+        int $x,
+        int $y,
+        string $label,
+        string $value,
+        int $maxChars = 48,
+        array $labelColor = [0, 0, 0],
+        array $valueColor = [0, 0, 0],
+        int $colonX = 112,
+        int $valueX = 126,
+    ): string
+    {
+        $lines = $this->wrapPdfText($value, $maxChars);
+        $colonX = $x + $colonX;
+        $valueX = $x + $valueX;
+        $chunks = [
+            $this->pdfText($x, $y, $label, 12, true, $labelColor),
+            $this->pdfText($colonX, $y, ':', 12, true, $labelColor),
+        ];
+
+        foreach ($lines as $index => $line) {
+            $chunks[] = $this->pdfText($valueX, $y - ($index * 16), $line, 12, false, $valueColor);
+        }
+
+        return implode("\n", $chunks);
+    }
+
+    private function pdfBullet(int $x, int $y, string $text, array $textColor = [0, 0, 0]): string
+    {
+        return implode("\n", [
+            $this->pdfText($x, $y, '- ', 12, true, $textColor),
+            $this->pdfText($x + 14, $y, $text, 11, false, $textColor),
+        ]);
+    }
+
+    private function pdfSectionHeader(int $x, int $y, string $title, array $titleColor, array $lineColor): string
+    {
+        return implode("\n", [
+            $this->pdfText($x, $y, $title, 14, true, $titleColor),
+            $this->pdfLine($x, $y - 6, 541, $y - 6, $lineColor),
+        ]);
+    }
+
+    private function pdfLine(int $x1, int $y1, int $x2, int $y2, array $rgb = [0.75, 0.82, 0.95]): string
+    {
+        return sprintf('%.3F %.3F %.3F RG 1 w %d %d m %d %d l S', $rgb[0], $rgb[1], $rgb[2], $x1, $y1, $x2, $y2);
+    }
+
+    private function pdfText(int $x, int $y, string $text, int $size, bool $bold = false, array $rgb = [0, 0, 0]): string
+    {
+        $font = $bold ? 'F2' : 'F1';
+
+        return sprintf(
+            'BT /%s %d Tf %.3F %.3F %.3F rg 1 0 0 1 %d %d Tm (%s) Tj ET',
+            $font,
+            $size,
+            $rgb[0],
+            $rgb[1],
+            $rgb[2],
+            $x,
+            $y,
+            $this->escapePdfText($text),
+        );
+    }
+
+    private function expandExamDates(Exam $exam)
+    {
+        $dates = collect();
+        $currentDate = $exam->start_date?->copy();
+        $endDate = $exam->end_date?->copy() ?? $currentDate;
+
+        while ($currentDate && $endDate && $currentDate->lte($endDate)) {
+            $dates->push($currentDate->copy());
+            $currentDate->addDay();
+        }
+
+        return $dates;
+    }
+
+    private function roomDisplayName(ExamRoom $room): string
+    {
+        return Str::startsWith(Str::lower($room->name), 'gedung')
+            ? $room->name
+            : 'Gedung GSC R. ' . $room->name;
+    }
+
+    private function locationLabel(ExamRoom $room): string
+    {
+        return self::EXAM_LOCATION . ' - ' . $room->name;
+    }
+
+    private function wrapPdfText(string $text, int $maxChars = 48): array
+    {
+        return preg_split("/\r\n|\n|\r/", wordwrap(trim($text) ?: '-', $maxChars, "\n", true)) ?: ['-'];
+    }
+
+    private function escapePdfText(string $text): string
+    {
+        return str_replace(
+            ['\\', '(', ')', "\r", "\n"],
+            ['\\\\', '\(', '\)', '', ' '],
+            $text,
+        );
+    }
+
 }
