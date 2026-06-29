@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ExamRoomController;
 use App\Http\Controllers\ManageUserController;
 use App\Http\Controllers\UserDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -43,5 +45,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/manage-users/{manage_user}/verify', [ManageUserController::class, 'verify'])->name('manage-users.verify');
         Route::get('/manage-users/{manage_user}/documents/{document}', [ManageUserController::class, 'showDocument'])->name('manage-users.documents.show');
         Route::resource('manage-users', ManageUserController::class)->except(['show', 'create', 'store']);
+        Route::resource('exam-rooms', ExamRoomController::class)->except(['show']);
+        Route::resource('exams', ExamController::class)->except(['show']);
     });
 });

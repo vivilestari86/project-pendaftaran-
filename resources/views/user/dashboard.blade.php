@@ -79,6 +79,14 @@
                                 <h2 id="required-documents-title">Dokumen Wajib</h2>
                             </div>
                             <p>Pastikan semua file terlihat jelas dan mudah dibaca.</p>
+                            <div
+                                class="upload-progress-text"
+                                data-upload-progress
+                                data-uploaded-count="{{ $uploadedCount }}"
+                                data-total-documents="{{ count($documents) }}"
+                            >
+                                {{ $uploadedCount }} dari {{ count($documents) }} dokumen berhasil diupload.
+                            </div>
                         </div>
                         <span class="status-badge">Perlu Tindakan</span>
                     </div>
@@ -209,6 +217,18 @@
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         const completeButton = document.querySelector('[data-complete-documents]');
+        const uploadProgress = document.querySelector('[data-upload-progress]');
+
+        const updateUploadProgress = () => {
+            if (!uploadProgress) {
+                return;
+            }
+
+            const uploadedCount = Number(uploadProgress.dataset.uploadedCount);
+            const totalDocuments = Number(uploadProgress.dataset.totalDocuments);
+
+            uploadProgress.textContent = `${uploadedCount} dari ${totalDocuments} dokumen berhasil diupload.`;
+        };
 
         document.querySelectorAll('.upload-alert').forEach((alertBox) => {
             window.setTimeout(() => {
@@ -219,6 +239,7 @@
 
         const renderUploadedFile = (card, uploadedDocument) => {
             const uploadedFiles = card.querySelector('[data-uploaded-files]');
+            const wasEmpty = uploadedFiles.hidden;
             const link = document.createElement('a');
             const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -236,6 +257,11 @@
 
             uploadedFiles.replaceChildren(link);
             uploadedFiles.hidden = false;
+
+            if (wasEmpty && uploadProgress) {
+                uploadProgress.dataset.uploadedCount = Number(uploadProgress.dataset.uploadedCount) + 1;
+                updateUploadProgress();
+            }
         };
 
         const setDropzoneState = (dropzoneElement, state, message) => {
