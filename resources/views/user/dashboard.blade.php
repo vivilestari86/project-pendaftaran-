@@ -1,18 +1,35 @@
 @php
-    $uploadedCount = collect(array_keys($documents))
+    $requiredDocuments = array_merge($specialDocuments, $documents);
+    $uploadedCount = collect(array_keys($requiredDocuments))
         ->filter(fn (string $key): bool => $uploadedDocuments->has($key))
         ->count();
-    $isDocumentComplete = $uploadedCount === count($documents);
+    $isDocumentComplete = $uploadedCount === count($requiredDocuments);
+    $verifiedCount = collect(array_keys($requiredDocuments))
+        ->filter(fn (string $key): bool => $uploadedDocuments->get($key, collect())->contains('status', 'verified'))
+        ->count();
+    $isDocumentVerified = $verifiedCount === count($requiredDocuments);
+    $registeredAt = auth()->user()->created_at;
+    $registrationDate = $registeredAt
+        ? $registeredAt->copy()->locale('id')->translatedFormat('d M Y')
+        : '-';
 
     $statuses = [
-        ['title' => 'Registrasi', 'description' => 'Selesai pada 24 Okt 2024', 'state' => 'done'],
+        ['title' => 'Registrasi', 'description' => "Selesai pada {$registrationDate}", 'state' => 'done'],
         [
             'title' => 'Upload Dokumen',
-            'description' => $isDocumentComplete ? 'Semua dokumen sudah diupload' : "{$uploadedCount}/" . count($documents) . ' dokumen diupload',
+            'description' => $isDocumentComplete ? 'Semua dokumen sudah diupload' : "{$uploadedCount}/" . count($requiredDocuments) . ' dokumen diupload',
             'state' => $isDocumentComplete ? 'done' : 'current',
         ],
-        ['title' => 'Verifikasi Admin', 'description' => 'Menunggu validasi dokumen', 'state' => $isDocumentComplete ? 'current' : 'pending'],
-        ['title' => 'Uji Kompetensi', 'description' => 'Tahap uji kompetensi akhir', 'state' => 'pending'],
+        [
+            'title' => 'Verifikasi Admin',
+            'description' => $isDocumentVerified ? 'Dokumen sudah diverifikasi' : 'Menunggu validasi dokumen',
+            'state' => $isDocumentVerified ? 'done' : ($isDocumentComplete ? 'current' : 'pending'),
+        ],
+        [
+            'title' => 'Uji Kompetensi',
+            'description' => $isDocumentVerified ? 'Menunggu kartu uji kompetensi tersedia' : 'Tahap uji kompetensi akhir',
+            'state' => $isDocumentVerified ? 'current' : 'pending',
+        ],
     ];
 @endphp
 
@@ -56,12 +73,17 @@
         </aside>
 
         <main class="portal-main">
-            <header class="topbar">
+            <header class="topbar" id="dashboard-top">
                 <h1>Halo, {{ auth()->user()->name }}! Mari lengkapi pendaftaranmu.</h1>
             </header>
 
             <div class="content-grid">
-                <form class="documents-panel" aria-labelledby="required-documents-title">
+                <form
+                    class="documents-panel"
+                    method="POST"
+                    action="{{ route('user.documents.submit') }}"
+                    aria-labelledby="required-documents-title"
+                >
                     @csrf
 
                     @if (session('success'))
@@ -72,23 +94,131 @@
                         <div class="upload-alert error">{{ $errors->first() }}</div>
                     @endif
 
+                    @if ($specialRequirement)
+                        <section class="special-requirements" aria-labelledby="special-requirements-title">
+                            <div class="panel-heading">
+                                <div>
+                                    <div class="title-row">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v2h4v16H5V5h4V3Zm2 2h2V4h-2v1ZM7 7v12h10V7h-2v2H9V7H7Zm3 4h4v2h-4v-2Zm0 4h4v2h-4v-2Z"/></svg>
+                                        <h2 id="special-requirements-title">{{ $specialRequirement['title'] }}</h2>
+                                    </div>
+                                    <p>{{ $specialRequirement['description'] }}</p>
+                                    <div
+                                        class="upload-progress-text"
+                                        data-upload-progress
+                                        data-uploaded-count="{{ $uploadedCount }}"
+                                        data-total-documents="{{ count($requiredDocuments) }}"
+                                    >
+                                        {{ $uploadedCount }} dari {{ count($requiredDocuments) }} dokumen berhasil diupload.
+                                    </div>
+                                </div>
+                                <span class="status-badge {{ $documentsSubmitted ? 'submitted' : '' }}">
+                                    {{ $documentsSubmitted ? 'Sudah Dikirim' : 'Perlu Tindakan' }}
+                                </span>
+                            </div>
+
+                            <div class="document-grid">
+                                @foreach ($specialDocuments as $key => $document)
+                                    @php
+                                        $uploadedDocumentList = $uploadedDocuments->get($key, collect());
+                                        $uploadedDocument = $uploadedDocumentList->first();
+                                        $isMultiple = $document['multiple'] ?? false;
+                                    @endphp
+                                    <article
+                                        class="document-card {{ ($document['wide'] ?? false) ? 'document-card-wide' : '' }}"
+                                        data-allows-multiple="{{ $isMultiple ? 'true' : 'false' }}"
+                                        data-can-delete="{{ $documentsSubmitted ? 'false' : 'true' }}"
+                                    >
+                                        <div class="document-card-top">
+                                            <span class="doc-icon {{ $document['tone'] }}">
+                                                @switch($document['icon'])
+                                                    @case('graduation')
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 10 5-10 5L2 9l10-5Zm-5 8.2 5 2.5 5-2.5V16c-1.2 1.3-2.9 2-5 2s-3.8-.7-5-2v-3.8Z"/></svg>
+                                                        @break
+                                                    @case('shield')
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-3.4 8.1-8 9-4.6-.9-8-4-8-9V6l8-3Zm0 2.1L6 7.3V12c0 3.7 2.3 6.1 6 6.9 3.7-.8 6-3.2 6-6.9V7.3l-6-2.2Zm-1 4h2v6h-2v-6Zm0 7h2v2h-2v-2Z"/></svg>
+                                                        @break
+                                                    @case('medical')
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5 4.4 13A5.3 5.3 0 0 1 12 5.6 5.3 5.3 0 0 1 19.6 13L12 20.5Zm-5-9.3h3l1-2.5 2 5 1-2.5h3"/></svg>
+                                                        @break
+                                                    @default
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10h3v3H5v-3Zm5.5 0h3v3h-3v-3Zm5.5 0h3v3h-3v-3Z"/></svg>
+                                                @endswitch
+                                            </span>
+                                            <span class="file-rule">
+                                                {{ $document['format'] }} (Maks 5MB{{ $isMultiple && isset($document['max_files']) ? ', maks ' . $document['max_files'] . ' file' : '' }})
+                                            </span>
+                                        </div>
+                                        <h3>{{ $document['title'] }}</h3>
+                                        <p>{{ $document['description'] }}</p>
+                                        <div class="uploaded-files" data-uploaded-files {{ $uploadedDocumentList->isEmpty() ? 'hidden' : '' }}>
+                                            @foreach ($uploadedDocumentList as $savedDocument)
+                                                <div class="uploaded-file-row" data-uploaded-document>
+                                                    <a href="{{ route('user.documents.show', $savedDocument) }}" class="uploaded-file" target="_blank" rel="noopener">
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 15.2-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4-7 7Z"/></svg>
+                                                        {{ $savedDocument->original_name }}
+                                                    </a>
+                                                    @unless ($documentsSubmitted)
+                                                        <button
+                                                            type="button"
+                                                            class="delete-document-button"
+                                                            data-delete-url="{{ route('user.documents.destroy', $savedDocument) }}"
+                                                        >
+                                                            Hapus
+                                                        </button>
+                                                    @endunless
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        @unless ($documentsSubmitted)
+                                            <div
+                                                class="document-dropzone"
+                                                data-upload-url="{{ route('user.documents.upload', $key) }}"
+                                                data-document-title="{{ $document['title'] }}"
+                                                data-multiple="{{ $isMultiple ? 'true' : 'false' }}"
+                                                data-max-files="{{ $document['max_files'] ?? '' }}"
+                                            >
+                                                <input
+                                                    class="dropzone-input"
+                                                    type="file"
+                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                    aria-label="Upload {{ $document['title'] }}"
+                                                    @if ($isMultiple) multiple @endif
+                                                >
+                                                <div class="dropzone-message">
+                                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v8h3l-4 4-4-4h3V5Zm-5 14h12v2H6v-2Z"/></svg>
+                                                    <span>{{ $uploadedDocument ? ($isMultiple ? 'Tambah File' : 'Ganti File') : 'Upload File' }}</span>
+                                                    <small>PDF, JPG, PNG</small>
+                                                </div>
+                                            </div>
+                                        @endunless
+                                    </article>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+
                     <div class="panel-heading">
                         <div>
                             <div class="title-row">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 19 9v12H5V3h8Zm0 2H7v14h10V10h-4V5Zm-1 7 3 3h-2v3h-2v-3H9l3-3Z"/></svg>
-                                <h2 id="required-documents-title">Dokumen Wajib</h2>
+                                <h2 id="required-documents-title">Persyaratan Umum</h2>
                             </div>
                             <p>Pastikan semua file terlihat jelas dan mudah dibaca.</p>
-                            <div
-                                class="upload-progress-text"
-                                data-upload-progress
-                                data-uploaded-count="{{ $uploadedCount }}"
-                                data-total-documents="{{ count($documents) }}"
-                            >
-                                {{ $uploadedCount }} dari {{ count($documents) }} dokumen berhasil diupload.
-                            </div>
+                            @if (! $specialRequirement)
+                                <div
+                                    class="upload-progress-text"
+                                    data-upload-progress
+                                    data-uploaded-count="{{ $uploadedCount }}"
+                                    data-total-documents="{{ count($requiredDocuments) }}"
+                                >
+                                    {{ $uploadedCount }} dari {{ count($requiredDocuments) }} dokumen berhasil diupload.
+                                </div>
+                            @endif
                         </div>
-                        <span class="status-badge">Perlu Tindakan</span>
+                        <span class="status-badge {{ $documentsSubmitted ? 'submitted' : '' }}">
+                            {{ $documentsSubmitted ? 'Sudah Dikirim' : 'Perlu Tindakan' }}
+                        </span>
                     </div>
 
                     <div class="document-grid">
@@ -98,7 +228,11 @@
                                 $uploadedDocument = $uploadedDocumentList->first();
                                 $isMultiple = $document['multiple'] ?? false;
                             @endphp
-                            <article class="document-card {{ ($document['wide'] ?? false) ? 'document-card-wide' : '' }}">
+                            <article
+                                class="document-card {{ ($document['wide'] ?? false) ? 'document-card-wide' : '' }}"
+                                data-allows-multiple="{{ $isMultiple ? 'true' : 'false' }}"
+                                data-can-delete="{{ $documentsSubmitted ? 'false' : 'true' }}"
+                            >
                                 <div class="document-card-top">
                                     <span class="doc-icon {{ $document['tone'] }}">
                                         @switch($document['icon'])
@@ -129,39 +263,57 @@
                                 <p>{{ $document['description'] }}</p>
                                 <div class="uploaded-files" data-uploaded-files {{ $uploadedDocumentList->isEmpty() ? 'hidden' : '' }}>
                                     @foreach ($uploadedDocumentList as $savedDocument)
-                                        <a href="{{ route('user.documents.show', $savedDocument) }}" class="uploaded-file" target="_blank" rel="noopener">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 15.2-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4-7 7Z"/></svg>
-                                            {{ $savedDocument->original_name }}
-                                        </a>
+                                        <div class="uploaded-file-row" data-uploaded-document>
+                                            <a href="{{ route('user.documents.show', $savedDocument) }}" class="uploaded-file" target="_blank" rel="noopener">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 15.2-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4-7 7Z"/></svg>
+                                                {{ $savedDocument->original_name }}
+                                            </a>
+                                            @unless ($documentsSubmitted)
+                                                <button
+                                                    type="button"
+                                                    class="delete-document-button"
+                                                    data-delete-url="{{ route('user.documents.destroy', $savedDocument) }}"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            @endunless
+                                        </div>
                                     @endforeach
                                 </div>
-                                <div
-                                    class="document-dropzone"
-                                    data-upload-url="{{ route('user.documents.upload', $key) }}"
-                                    data-document-title="{{ $document['title'] }}"
-                                >
-                                    <input
-                                        class="dropzone-input"
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        aria-label="Upload {{ $document['title'] }}"
+                                @unless ($documentsSubmitted)
+                                    <div
+                                        class="document-dropzone"
+                                        data-upload-url="{{ route('user.documents.upload', $key) }}"
+                                        data-document-title="{{ $document['title'] }}"
+                                        data-multiple="{{ $isMultiple ? 'true' : 'false' }}"
+                                        data-max-files="{{ $document['max_files'] ?? 1 }}"
                                     >
-                                    <div class="dropzone-message">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v8h3l-4 4-4-4h3V5Zm-5 14h12v2H6v-2Z"/></svg>
-                                        <span>{{ $uploadedDocument ? 'Ganti File' : 'Upload File' }}</span>
-                                        <small>PDF, JPG, PNG</small>
+                                        <input
+                                            class="dropzone-input"
+                                            type="file"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            aria-label="Upload {{ $document['title'] }}"
+                                            @if ($isMultiple) multiple @endif
+                                        >
+                                        <div class="dropzone-message">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v8h3l-4 4-4-4h3V5Zm-5 14h12v2H6v-2Z"/></svg>
+                                            <span>{{ $uploadedDocument ? 'Ganti File' : 'Upload File' }}</span>
+                                            <small>PDF, JPG, PNG</small>
+                                        </div>
                                     </div>
-                                </div>
+                                @endunless
                             </article>
                         @endforeach
                     </div>
 
-                    <div class="submit-row">
-                        <button type="button" class="submit-button" data-complete-documents>
-                            Kirim Dokumen
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 7 7-7 7-1.4-1.4 4.6-4.6H3v-2h14.2l-4.6-4.6L14 5Z"/></svg>
-                        </button>
-                    </div>
+                    @unless ($documentsSubmitted)
+                        <div class="submit-row">
+                            <button type="submit" class="submit-button">
+                                Kirim Dokumen
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 7 7-7 7-1.4-1.4 4.6-4.6H3v-2h14.2l-4.6-4.6L14 5Z"/></svg>
+                            </button>
+                        </div>
+                    @endunless
                 </form>
 
                 <aside class="status-panel" aria-labelledby="application-status-title">
@@ -187,18 +339,25 @@
                             @endforeach
                         </div>
 
-                        <div class="help-box">
-                            <div class="help-heading">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 0 0-8 8v5h4v-6H6.1A6 6 0 0 1 18 11h-2v6h4v-5a8 8 0 0 0-8-8Zm-2 14h5v2h-5v-2Z"/></svg>
-                                <h3>Butuh Bantuan?</h3>
+                        @if ($isDocumentVerified)
+                            <div class="exam-download-box">
+                                <div class="exam-download-heading">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 19 9v12H5V3h8Zm0 2H7v14h10V10h-4V5Zm-1 7 3 3h-2v3h-2v-3H9l3-3Z"/></svg>
+                                    <h3>Kartu Uji Kompetensi</h3>
+                                </div>
+                                <p>Verifikasi admin selesai. Unduh kartu uji kompetensi melalui tombol di bawah setelah kartu tersedia.</p>
+                                <button
+                                    type="button"
+                                    class="exam-download-button"
+                                    disabled
+                                    aria-disabled="true"
+                                    title="Format kartu uji kompetensi belum tersedia"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v8l3-3 1.4 1.4L12 15.8l-5.4-5.4L8 9l3 3V4ZM5 18h14v2H5v-2Z"/></svg>
+                                    Unduh Kartu Uji Kompetensi
+                                </button>
                             </div>
-                            <p>Hubungi bagian rekrutmen untuk kendala teknis atau klarifikasi dokumen.</p>
-                            <a href="#" class="guideline-link">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v8l3-3 1.4 1.4L12 15.8l-5.4-5.4L8 9l3 3V4ZM5 18h14v2H5v-2Z"/></svg>
-                                Unduh Panduan
-                            </a>
-                            <div class="help-email">Email: hrd@rsud-reg.com</div>
-                        </div>
+                        @endif
                     </section>
                 </aside>
             </div>
@@ -216,7 +375,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-        const completeButton = document.querySelector('[data-complete-documents]');
         const uploadProgress = document.querySelector('[data-upload-progress]');
 
         const updateUploadProgress = () => {
@@ -226,9 +384,19 @@
             uploadProgress.textContent = `${uploadedCount} dari ${totalDocuments} dokumen berhasil diupload.`;
         };
 
+        document.querySelectorAll('.upload-alert').forEach((alertBox) => {
+            window.setTimeout(() => {
+                alertBox.classList.add('is-hiding');
+                window.setTimeout(() => alertBox.remove(), 300);
+            }, 2000);
+        });
+
         const renderUploadedFile = (card, uploadedDocument) => {
             const uploadedFiles = card.querySelector('[data-uploaded-files]');
             const wasEmpty = uploadedFiles.hidden;
+            const allowsMultiple = card.dataset.allowsMultiple === 'true';
+            const canDelete = card.dataset.canDelete === 'true';
+            const row = document.createElement('div');
             const link = document.createElement('a');
             const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -244,7 +412,26 @@
             link.appendChild(icon);
             link.append(uploadedDocument.name);
 
-            uploadedFiles.replaceChildren(link);
+            if (canDelete) {
+                const deleteButton = document.createElement('button');
+
+                row.className = 'uploaded-file-row';
+                row.dataset.uploadedDocument = '';
+                deleteButton.type = 'button';
+                deleteButton.className = 'delete-document-button';
+                deleteButton.dataset.deleteUrl = uploadedDocument.delete_url;
+                deleteButton.textContent = 'Hapus';
+                row.append(link, deleteButton);
+
+                if (allowsMultiple) {
+                    uploadedFiles.appendChild(row);
+                } else {
+                    uploadedFiles.replaceChildren(row);
+                }
+            } else {
+                uploadedFiles.replaceChildren(link);
+            }
+
             uploadedFiles.hidden = false;
 
             if (wasEmpty) {
@@ -283,56 +470,80 @@
 
         const initNativeDropzone = (dropzoneElement) => {
             const card = dropzoneElement.closest('.document-card');
-            const message = dropzoneElement.querySelector('.dropzone-message span');
-            const originalLabel = message.textContent;
             const input = dropzoneElement.querySelector('.dropzone-input');
+            const allowsMultiple = dropzoneElement.dataset.multiple === 'true';
+            const maxFiles = Number(dropzoneElement.dataset.maxFiles) || null;
+            const idleLabel = () => {
+                const hasUploadedFile = card.querySelectorAll('[data-uploaded-document]').length > 0;
+
+                if (!hasUploadedFile) {
+                    return 'Upload File';
+                }
+
+                return allowsMultiple ? 'Tambah File' : 'Ganti File';
+            };
 
             dropzoneElement.setAttribute('role', 'button');
             dropzoneElement.setAttribute('tabindex', '0');
 
-            const uploadFile = async (file) => {
-                const formData = new FormData();
-                formData.append('file', file);
+            const handleFiles = async (fileList) => {
+                const files = Array.from(fileList || []);
+
+                if (files.length === 0) {
+                    return;
+                }
+
+                const existingCount = card.querySelectorAll('[data-uploaded-document]').length;
+
+                if (allowsMultiple && maxFiles !== null && existingCount + files.length > maxFiles) {
+                    setDropzoneState(dropzoneElement, 'is-error', `Maksimal ${maxFiles} file`);
+
+                    window.setTimeout(() => {
+                        setDropzoneState(dropzoneElement, '', idleLabel());
+                    }, 3000);
+
+                    input.value = '';
+                    return;
+                }
 
                 setDropzoneState(dropzoneElement, 'is-uploading', 'Mengupload...');
                 input.disabled = true;
 
-                const response = await fetch(dropzoneElement.dataset.uploadUrl, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: formData,
-                    credentials: 'same-origin',
-                });
+                try {
+                    for (const file of files) {
+                        const formData = new FormData();
+                        formData.append('file', file);
 
-                const payload = await response.json().catch(() => ({}));
+                        const response = await fetch(dropzoneElement.dataset.uploadUrl, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: formData,
+                            credentials: 'same-origin',
+                        });
 
-                if (!response.ok) {
-                    throw new Error(parseUploadError(payload));
-                }
+                        const payload = await response.json().catch(() => ({}));
 
-                setDropzoneState(dropzoneElement, 'is-success', 'Upload Berhasil');
-                renderUploadedFile(card, payload.document);
-                input.value = '';
-                input.disabled = false;
-            };
+                        if (!response.ok) {
+                            throw new Error(parseUploadError(payload));
+                        }
 
-            const handleFile = (file) => {
-                if (!file) {
-                    return;
-                }
+                        renderUploadedFile(card, payload.document);
+                    }
 
-                uploadFile(file).catch((error) => {
+                    setDropzoneState(dropzoneElement, 'is-success', allowsMultiple ? 'Tambah File' : 'Upload Berhasil');
+                } catch (error) {
                     setDropzoneState(dropzoneElement, 'is-error', error.message);
-                    input.value = '';
-                    input.disabled = false;
 
                     window.setTimeout(() => {
-                        setDropzoneState(dropzoneElement, '', originalLabel);
+                        setDropzoneState(dropzoneElement, '', idleLabel());
                     }, 3000);
-                });
+                } finally {
+                    input.value = '';
+                    input.disabled = false;
+                }
             };
 
             dropzoneElement.addEventListener('keydown', (event) => {
@@ -341,7 +552,7 @@
                     input.click();
                 }
             });
-            input.addEventListener('change', () => handleFile(input.files[0]));
+            input.addEventListener('change', () => handleFiles(input.files));
             dropzoneElement.addEventListener('dragover', (event) => {
                 event.preventDefault();
                 dropzoneElement.classList.add('dz-drag-hover');
@@ -352,9 +563,71 @@
             dropzoneElement.addEventListener('drop', (event) => {
                 event.preventDefault();
                 dropzoneElement.classList.remove('dz-drag-hover');
-                handleFile(event.dataTransfer.files[0]);
+                const droppedFiles = allowsMultiple
+                    ? event.dataTransfer.files
+                    : [event.dataTransfer.files[0]];
+
+                handleFiles(droppedFiles);
             });
         };
+
+        document.addEventListener('click', async (event) => {
+            const deleteButton = event.target.closest('.delete-document-button');
+
+            if (!deleteButton) {
+                return;
+            }
+
+            const row = deleteButton.closest('[data-uploaded-document]');
+            const card = deleteButton.closest('.document-card');
+            const uploadedFiles = card.querySelector('[data-uploaded-files]');
+            const dropzoneElement = card.querySelector('.document-dropzone');
+            const previousLabel = deleteButton.textContent;
+
+            deleteButton.disabled = true;
+            deleteButton.textContent = 'Menghapus...';
+
+            try {
+                const response = await fetch(deleteButton.dataset.deleteUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                });
+                const payload = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(parseUploadError(payload));
+                }
+
+                row.remove();
+
+                if (uploadedFiles.children.length === 0) {
+                    uploadedFiles.hidden = true;
+                    uploadProgress.dataset.uploadedCount = Math.max(0, Number(uploadProgress.dataset.uploadedCount) - 1);
+                    updateUploadProgress();
+                    setDropzoneState(dropzoneElement, '', 'Upload File');
+                } else {
+                    const label = card.dataset.allowsMultiple === 'true' ? 'Tambah File' : 'Ganti File';
+                    setDropzoneState(dropzoneElement, '', label);
+                }
+            } catch (error) {
+                deleteButton.disabled = false;
+                deleteButton.textContent = previousLabel;
+                setDropzoneState(dropzoneElement, 'is-error', error.message);
+
+                window.setTimeout(() => {
+                    const hasUploadedFile = card.querySelectorAll('[data-uploaded-document]').length > 0;
+                    const label = hasUploadedFile
+                        ? (card.dataset.allowsMultiple === 'true' ? 'Tambah File' : 'Ganti File')
+                        : 'Upload File';
+
+                    setDropzoneState(dropzoneElement, '', label);
+                }, 3000);
+            }
+        });
 
         const initDropzoneJs = (dropzoneElement) => {
             const card = dropzoneElement.closest('.document-card');
@@ -403,9 +676,6 @@
             initNativeDropzone(dropzoneElement);
         });
 
-        completeButton.addEventListener('click', () => {
-            window.location.reload();
-        });
     </script>
 </body>
 </html>

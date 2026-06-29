@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserDocument;
+use App\Support\ProfessionRequirements;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -54,14 +55,16 @@ class ManageUserController extends Controller
     public function edit(User $manageUser)
     {
         $manageUser->load('documents');
+        $requiredDocuments = $this->requiredDocumentsFor($manageUser);
 
         return view('admin.manage-user.edit', [
             'user' => $manageUser,
-            'requiredDocumentCount' => count(self::REQUIRED_DOCUMENTS),
+            'requiredDocumentCount' => count($requiredDocuments),
             'uploadedDocumentCount' => $this->uploadedDocumentCount($manageUser),
             'isDocumentComplete' => $this->isDocumentComplete($manageUser),
             'isDocumentVerified' => $this->isDocumentVerified($manageUser),
-            'documentCategories' => collect(self::REQUIRED_DOCUMENTS)->map(function (string $label, string $type) use ($manageUser) {
+            'profilePhotoUrl' => $this->profilePhotoUrl($manageUser),
+            'documentCategories' => collect($requiredDocuments)->map(function (string $label, string $type) use ($manageUser) {
                 return [
                     'type' => $type,
                     'label' => $label,
@@ -99,7 +102,7 @@ class ManageUserController extends Controller
         }
 
         $manageUser->documents()
-            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
+            ->whereIn('document_type', array_keys($this->requiredDocumentsFor($manageUser)))
             ->update(['status' => 'verified']);
 
         return redirect()->route('admin.manage-users.edit', $manageUser)
@@ -140,61 +143,84 @@ class ManageUserController extends Controller
 
     private function completeUserIds()
     {
-        return UserDocument::query()
-            ->select('user_id')
-            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
-            ->groupBy('user_id')
-            ->havingRaw('COUNT(DISTINCT document_type) >= ?', [count(self::REQUIRED_DOCUMENTS)])
-            ->pluck('user_id');
+        return User::query()
+            ->where('role', 'user')
+            ->with('documents')
+            ->get()
+            ->filter(fn (User $user): bool => $this->isDocumentComplete($user))
+            ->pluck('id');
     }
 
     private function verifiedUserIds()
     {
-        return UserDocument::query()
-            ->select('user_id')
-            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
-            ->where('status', 'verified')
-            ->groupBy('user_id')
-            ->havingRaw('COUNT(DISTINCT document_type) >= ?', [count(self::REQUIRED_DOCUMENTS)])
-            ->pluck('user_id');
+        return User::query()
+            ->where('role', 'user')
+            ->with('documents')
+            ->get()
+            ->filter(fn (User $user): bool => $this->isDocumentVerified($user))
+            ->pluck('id');
     }
 
     private function uploadedDocumentCount(User $user): int
     {
+        $requiredDocumentTypes = array_keys($this->requiredDocumentsFor($user));
+
         if ($user->relationLoaded('documents')) {
             return $user->documents
-                ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
+                ->whereIn('document_type', $requiredDocumentTypes)
                 ->pluck('document_type')
                 ->unique()
                 ->count();
         }
 
         return $user->documents()
-            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
+            ->whereIn('document_type', $requiredDocumentTypes)
             ->distinct('document_type')
             ->count('document_type');
     }
 
     private function isDocumentComplete(User $user): bool
     {
-        return $this->uploadedDocumentCount($user) >= count(self::REQUIRED_DOCUMENTS);
+        return $this->uploadedDocumentCount($user) >= count($this->requiredDocumentsFor($user));
     }
 
     private function isDocumentVerified(User $user): bool
     {
+        $requiredDocumentTypes = array_keys($this->requiredDocumentsFor($user));
+
         if ($user->relationLoaded('documents')) {
             return $user->documents
-                ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
+                ->whereIn('document_type', $requiredDocumentTypes)
                 ->where('status', 'verified')
                 ->pluck('document_type')
                 ->unique()
-                ->count() >= count(self::REQUIRED_DOCUMENTS);
+                ->count() >= count($requiredDocumentTypes);
         }
 
         return $user->documents()
-            ->whereIn('document_type', array_keys(self::REQUIRED_DOCUMENTS))
+            ->whereIn('document_type', $requiredDocumentTypes)
             ->where('status', 'verified')
             ->distinct('document_type')
-            ->count('document_type') >= count(self::REQUIRED_DOCUMENTS);
+            ->count('document_type') >= count($requiredDocumentTypes);
+    }
+
+    private function requiredDocumentsFor(User $user): array
+    {
+        return array_merge(self::REQUIRED_DOCUMENTS, ProfessionRequirements::labelsFor($user->profesi));
+    }
+
+    private function profilePhotoUrl(User $user): ?string
+    {
+        $pasFoto = $user->documents
+            ->where('document_type', 'pas_foto')
+            ->filter(fn (UserDocument $document) => str_starts_with((string) $document->mime_type, 'image/'))
+            ->sortByDesc('uploaded_at')
+            ->first();
+
+        if ($pasFoto && Storage::disk('public')->exists($pasFoto->file_path)) {
+            return route('admin.manage-users.documents.show', [$user, $pasFoto]);
+        }
+
+        return $user->profile_photo_url;
     }
 }

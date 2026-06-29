@@ -6,9 +6,24 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
+    private const PROFESSIONS = [
+        'Administrasi Perkantoran',
+        'Akuntansi',
+        'BDRS',
+        'Bidan D3',
+        'Bidan D4/S1 + Profesi',
+        'Dokter umum',
+        'Ners',
+        'Perawat D3',
+        'Pranata Komputer IT',
+        'Teknik Pendingin',
+        'TTK (Asisten Apoteker)',
+    ];
+
     public function showLogin()
     {
         if (Auth::check()) {
@@ -72,14 +87,16 @@ class AuthController extends Controller
                 : redirect()->route('user.dashboard');
         }
 
-        return view('auth.register');
+        return view('auth.register', [
+            'professions' => self::PROFESSIONS,
+        ]);
     }
 
     public function register(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'profesi' => 'required|string|max:255',
+            'profesi' => ['required', Rule::in(self::PROFESSIONS)],
             'email' => 'required|email|unique:users,email',
             'phone_number' => 'required|string|max:20',
             'password' => 'required|string|min:8|confirmed',
@@ -87,6 +104,7 @@ class AuthController extends Controller
         ], [
             'name.required' => 'Nama harus diisi',
             'profesi.required' => 'Profesi harus diisi',
+            'profesi.in' => 'Profesi yang dipilih tidak valid',
             'email.required' => 'Email harus diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',

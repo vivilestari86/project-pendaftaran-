@@ -39,7 +39,7 @@ a {
 .portal-shell {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 330px minmax(0, 1fr);
+    grid-template-columns: clamp(240px, 15vw, 280px) minmax(0, 1fr);
 }
 
 .portal-sidebar {
@@ -55,10 +55,11 @@ a {
 .brand {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 30px 28px;
-    font-size: 24px;
+    gap: 12px;
+    padding: 30px 20px;
+    font-size: clamp(18px, 1.15vw, 22px);
     font-weight: 800;
+    white-space: nowrap;
 }
 
 .brand-logo {
@@ -86,11 +87,20 @@ a {
     color: #40434f;
     font-size: 18px;
     font-weight: 500;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease;
 }
 
 .nav-link.active {
     background: #dfe1ea;
     color: var(--navy);
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+    transform: translateX(6px);
+    background: #d7dae5;
+    color: var(--navy);
+    box-shadow: 0 6px 16px rgba(3, 13, 86, .1);
 }
 
 .nav-link svg,
@@ -114,6 +124,13 @@ a {
     font-size: 18px;
     font-weight: 500;
     cursor: pointer;
+    transition: transform .2s ease, color .2s ease;
+}
+
+.logout-btn:hover,
+.logout-btn:focus-visible {
+    transform: translateX(6px);
+    color: #d0162a;
 }
 
 .portal-main {
@@ -124,7 +141,7 @@ a {
     min-height: 86px;
     display: flex;
     align-items: center;
-    padding: 0 104px;
+    padding: 0 clamp(24px, 2.5vw, 48px);
     background: #fbfbfd;
     border-bottom: 1px solid #d1d4dd;
 }
@@ -137,13 +154,19 @@ a {
 }
 
 .content-grid {
+    width: 100%;
     display: grid;
-    grid-template-columns: minmax(620px, 704px) minmax(300px, 338px);
-    gap: 28px;
+    grid-template-columns: minmax(560px, 2.15fr) minmax(280px, 0.85fr);
+    gap: clamp(20px, 2vw, 32px);
     align-items: start;
-    max-width: 1130px;
-    margin: 56px auto;
-    padding: 0 28px;
+    margin: clamp(28px, 3vw, 48px) auto;
+    padding: 0 clamp(20px, 2.5vw, 48px);
+}
+
+@media (min-width: 1600px) {
+    .content-grid {
+        max-width: calc(100vw - 380px);
+    }
 }
 
 .documents-panel,
@@ -155,7 +178,8 @@ a {
 }
 
 .documents-panel {
-    padding: 38px;
+    min-width: 0;
+    padding: clamp(24px, 2.25vw, 38px);
 }
 
 .upload-alert {
@@ -164,6 +188,7 @@ a {
     border-radius: 8px;
     font-size: 15px;
     font-weight: 700;
+    transition: opacity .3s ease, transform .3s ease, margin .3s ease;
 }
 
 .upload-alert.success {
@@ -176,6 +201,22 @@ a {
     border: 1px solid #fecaca;
     background: #fef2f2;
     color: #991b1b;
+}
+
+.upload-alert.is-hiding {
+    opacity: 0;
+    transform: translateY(-6px);
+    margin-bottom: 0;
+}
+
+.special-requirements {
+    margin-bottom: 38px;
+    padding-bottom: 38px;
+    border-bottom: 1px solid #e2e4ea;
+}
+
+.special-requirements .panel-heading {
+    margin-bottom: 28px;
 }
 
 .panel-heading {
@@ -227,6 +268,10 @@ a {
     padding: 8px 22px;
     font-size: 16px;
     font-weight: 800;
+}
+
+.status-badge.submitted {
+    background: #087443;
 }
 
 .document-grid {
@@ -310,7 +355,20 @@ a {
     margin-bottom: 18px;
 }
 
+.uploaded-file-row {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid #e1e4ea;
+    border-radius: 7px;
+    background: #f8f9fb;
+}
+
 .uploaded-file {
+    min-width: 0;
+    flex: 1;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -318,6 +376,28 @@ a {
     font-size: 13px;
     font-weight: 400;
     word-break: break-word;
+}
+
+.delete-document-button {
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 10px;
+    background: #fff0f2;
+    color: #b4232f;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.delete-document-button:hover {
+    background: #fbdde1;
+}
+
+.delete-document-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
 }
 
 .selected-file {
@@ -502,8 +582,27 @@ a {
     height: 26px;
 }
 
+.documents-submitted-message {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    background: #ecfdf5;
+    color: #065f46;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.documents-submitted-message svg {
+    width: 22px;
+    height: 22px;
+}
+
 .status-card {
-    padding: 40px 38px;
+    min-width: 0;
+    padding: clamp(24px, 2vw, 36px);
 }
 
 .side-title {
@@ -587,52 +686,55 @@ a {
     line-height: 1.35;
 }
 
-.help-box {
+.exam-download-box {
     padding: 28px;
     border: 1px solid #cfd2db;
     border-radius: 8px;
     background: #f6f6f8;
 }
 
-.help-heading {
+.exam-download-heading {
     display: flex;
     align-items: center;
     gap: 16px;
     margin-bottom: 20px;
 }
 
-.help-heading h3 {
+.exam-download-heading h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 800;
 }
 
-.help-heading svg,
-.guideline-link svg {
+.exam-download-heading svg,
+.exam-download-button svg {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
     color: var(--navy);
 }
 
-.help-box p {
+.exam-download-box p {
     margin: 0 0 24px;
     color: #424651;
     font-size: 15px;
     line-height: 1.45;
 }
 
-.guideline-link {
+.exam-download-button {
+    width: 100%;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 14px;
-    padding-bottom: 14px;
-    color: var(--navy);
+    padding: 12px 14px;
+    border: 1px solid #cfd2db;
+    border-radius: 7px;
+    background: #e4e6eb;
+    color: #777b86;
+    font: inherit;
     font-weight: 800;
-    border-bottom: 1px solid #e0e1e6;
-}
-
-.help-email {
-    padding-top: 12px;
-    color: #232632;
-    font-size: 13px;
+    cursor: not-allowed;
 }
 
 .portal-footer {
@@ -661,11 +763,11 @@ a {
 
 @media (max-width: 1180px) {
     .portal-shell {
-        grid-template-columns: 280px minmax(0, 1fr);
+        grid-template-columns: 240px minmax(0, 1fr);
     }
 
     .topbar {
-        padding: 0 40px;
+        padding: 0 28px;
     }
 
     .content-grid {
@@ -790,5 +892,19 @@ a {
 
     .file-rule {
         white-space: normal;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-link,
+    .logout-btn {
+        transition: none;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible,
+    .logout-btn:hover,
+    .logout-btn:focus-visible {
+        transform: none;
     }
 }

@@ -593,8 +593,8 @@
             <section class="profile-card">
                 <div class="avatar-wrap">
                     <div class="avatar-large">
-                        @if($user->profile_photo_url)
-                            <img src="{{ $user->profile_photo_url }}" alt="Foto {{ $user->name }}">
+                        @if($profilePhotoUrl)
+                            <img src="{{ $profilePhotoUrl }}" alt="Foto {{ $user->name }}">
                         @else
                             {{ $initials ?: 'U' }}
                         @endif

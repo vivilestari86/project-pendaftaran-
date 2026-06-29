@@ -31,8 +31,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('is.user')->group(function () {
         Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
         Route::post('/dashboard/documents', [UserDashboardController::class, 'storeDocuments'])->name('user.documents.store');
+        Route::post('/dashboard/documents/submit', [UserDashboardController::class, 'submitDocuments'])->name('user.documents.submit');
         Route::post('/dashboard/documents/{documentType}/upload', [UserDashboardController::class, 'uploadDocument'])->name('user.documents.upload');
         Route::get('/dashboard/documents/{document}', [UserDashboardController::class, 'showDocument'])->name('user.documents.show');
+        Route::delete('/dashboard/documents/{document}', [UserDashboardController::class, 'destroyDocument'])->name('user.documents.destroy');
     });
 
     Route::prefix('admin')->name('admin.')->middleware('is.admin')->group(function () {

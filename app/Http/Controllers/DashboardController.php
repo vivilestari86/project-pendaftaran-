@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\UserDocument;
+use App\Support\ProfessionRequirements;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
@@ -126,11 +126,14 @@ class DashboardController extends Controller
     {
         abort_unless($pendaftar->isUser(), 404);
 
-        $uploadedCount = $pendaftar->documents()
-            ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
-            ->distinct('document_type')
-            ->count('document_type');
-        $isComplete = $uploadedCount >= count(self::REQUIRED_DOCUMENTS);
+        $pendaftar->loadMissing('documents');
+        $requiredDocumentTypes = $this->requiredDocumentTypesFor($pendaftar);
+        $uploadedCount = $pendaftar->documents
+            ->whereIn('document_type', $requiredDocumentTypes)
+            ->pluck('document_type')
+            ->unique()
+            ->count();
+        $isComplete = $uploadedCount >= count($requiredDocumentTypes);
 
         return response()->json([
             'success' => true,
@@ -142,7 +145,7 @@ class DashboardController extends Controller
                 'foto'               => $pendaftar->profile_photo_url,
                 'has_foto'           => (bool) $pendaftar->profile_photo_url,
                 'initials'           => $this->initials($pendaftar->name),
-                'wilayah'            => 'Dokumen: ' . $uploadedCount . '/' . count(self::REQUIRED_DOCUMENTS),
+                'wilayah'            => 'Dokumen: ' . $uploadedCount . '/' . count($requiredDocumentTypes),
                 'status_kelengkapan' => $isComplete ? 'LENGKAP' : 'BELUM LENGKAP',
                 'badge_color'        => $isComplete ? 'success' : 'warning',
                 'email'              => $pendaftar->email ?? '-',
@@ -157,20 +160,30 @@ class DashboardController extends Controller
 
     private function completeUserIds()
     {
-        return UserDocument::query()
-            ->select('user_id')
-            ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
-            ->groupBy('user_id')
-            ->havingRaw('COUNT(DISTINCT document_type) >= ?', [count(self::REQUIRED_DOCUMENTS)])
-            ->pluck('user_id');
+        return User::query()
+            ->where('role', 'user')
+            ->with('documents')
+            ->get()
+            ->filter(function (User $user): bool {
+                $requiredDocumentTypes = $this->requiredDocumentTypesFor($user);
+                $uploadedCount = $user->documents
+                    ->whereIn('document_type', $requiredDocumentTypes)
+                    ->pluck('document_type')
+                    ->unique()
+                    ->count();
+
+                return $uploadedCount >= count($requiredDocumentTypes);
+            })
+            ->pluck('id');
     }
 
     private function mapUsersForDashboard($users, $completeUserIds)
     {
         return $users->map(function (User $user) use ($completeUserIds) {
             $isComplete = $completeUserIds->contains($user->id);
+            $requiredDocumentTypes = $this->requiredDocumentTypesFor($user);
             $uploadedCount = $user->documents
-                ->whereIn('document_type', self::REQUIRED_DOCUMENTS)
+                ->whereIn('document_type', $requiredDocumentTypes)
                 ->pluck('document_type')
                 ->unique()
                 ->count();
@@ -182,13 +195,18 @@ class DashboardController extends Controller
                 'profesi' => $user->profesi ?: '-',
                 'email' => $user->email,
                 'no_hp' => $user->phone_number,
-                'wilayah' => $uploadedCount . '/' . count(self::REQUIRED_DOCUMENTS) . ' dokumen',
+                'wilayah' => $uploadedCount . '/' . count($requiredDocumentTypes) . ' dokumen',
                 'badge_color' => $isComplete ? 'success' : 'warning',
                 'status_label' => $isComplete ? 'LENGKAP' : 'BELUM LENGKAP',
                 'tanggal_daftar' => $user->created_at,
                 'waktu_relatif' => $user->created_at?->diffForHumans() ?? '-',
             ];
         });
+    }
+
+    private function requiredDocumentTypesFor(User $user): array
+    {
+        return array_merge(self::REQUIRED_DOCUMENTS, array_keys(ProfessionRequirements::documentsFor($user->profesi)));
     }
 
     private function initials(string $name): string

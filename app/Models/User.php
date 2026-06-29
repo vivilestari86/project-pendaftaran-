@@ -24,6 +24,7 @@ class User extends Authenticatable
         'phone_number',
         'profile_photo',
         'terms_agreed',
+        'documents_submitted_at',
     ];
 
     protected $hidden = [
@@ -36,6 +37,7 @@ class User extends Authenticatable
         'last_active_at' => 'datetime',
         'password' => 'hashed',
         'terms_agreed' => 'boolean',
+        'documents_submitted_at' => 'datetime',
     ];
 
     // Check apakah user adalah admin

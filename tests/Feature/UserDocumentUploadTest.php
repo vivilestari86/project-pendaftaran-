@@ -53,4 +53,30 @@ class UserDocumentUploadTest extends TestCase
 
         Storage::disk('public')->assertExists($document->file_path);
     }
+
+    public function test_ners_can_upload_more_than_four_competency_certificates(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->activeUser()->create([
+            'profesi' => 'Ners',
+        ]);
+
+        foreach (range(1, 5) as $index) {
+            $response = $this
+                ->actingAs($user)
+                ->postJson(route('user.documents.upload', 'ners_sertifikat_kompetensi'), [
+                    'file' => UploadedFile::fake()->create("sertifikat-{$index}.pdf", 128, 'application/pdf'),
+                ]);
+
+            $response->assertOk();
+        }
+
+        $this->assertSame(
+            5,
+            UserDocument::where('user_id', $user->id)
+                ->where('document_type', 'ners_sertifikat_kompetensi')
+                ->count(),
+        );
+    }
 }
