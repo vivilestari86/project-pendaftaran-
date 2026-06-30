@@ -493,58 +493,81 @@ class UserDashboardController extends Controller
         $timeLabel = $examCard['session']->start_time?->format('H:i') . ' - ' . $examCard['session']->end_time?->format('H:i') . ' WIB';
         $roomLabel = $this->roomDisplayName($examCard['room']);
         $locationLabel = $this->locationLabel($examCard['room']);
-        $headingColor = [0, 0, 0];
-        $textColor = [0, 0, 0];
-        $mutedColor = [0, 0, 0];
-        $lineColor = [0.82, 0.82, 0.82];
+        $profilePhoto = $this->resolveProfilePhotoForPdf($user);
+        $professionLabel = $user->profesi ? Str::title($user->profesi) : 'Peserta Terverifikasi';
+        $headingColor = [0.10, 0.19, 0.42];
+        $textColor = [0.12, 0.15, 0.20];
+        $mutedColor = [0.41, 0.47, 0.58];
+        $lineColor = [0.84, 0.88, 0.95];
+        $blueBar = [0.18, 0.33, 0.74];
+        $blueSoft = [0.96, 0.98, 1.00];
 
         $stream = [];
-        $stream[] = '1 1 1 rg 16 16 563 810 re f';
-        $stream[] = '0 0 0 RG 0.8 w 16 16 563 810 re S';
-        $stream[] = '0 0 0 rg 16 816 563 10 re f';
+        $stream[] = '1 1 1 rg 18 18 559 806 re f';
+        $stream[] = '0.86 0.89 0.95 RG 0.8 w 18 18 559 806 re S';
+        $stream[] = sprintf('%.3F %.3F %.3F rg 18 814 559 8 re f', $blueBar[0], $blueBar[1], $blueBar[2]);
+        $stream[] = sprintf('%.3F %.3F %.3F rg 18 744 559 68 re f', $blueSoft[0], $blueSoft[1], $blueSoft[2]);
 
-        $stream[] = $this->pdfText(34, 784, 'KARTU UJI KOMPETENSI', 21, true, $headingColor);
-        $stream[] = $this->pdfText(34, 762, 'Polindra Portal', 10, false, $mutedColor);
-        $stream[] = $this->pdfText(448, 784, 'TERVERIFIKASI', 10, true, $headingColor);
-        $stream[] = $this->pdfLine(34, 746, 541, 746, $lineColor);
+        $stream[] = $this->pdfText(36, 785, 'KARTU UJI KOMPETENSI', 21, true, $headingColor);
+        $stream[] = $this->pdfText(36, 765, $professionLabel, 9, false, $mutedColor);
+        $stream[] = $this->pdfText(456, 784, 'TERVERIFIKASI', 9, true, $blueBar);
+        $stream[] = $this->pdfLine(36, 748, 541, 748, $lineColor);
 
-        $stream[] = $this->pdfSectionHeader(34, 718, 'DATA PESERTA', $headingColor, $lineColor);
-        $stream[] = $this->pdfKeyValue(42, 690, 'NOMOR UJIAN', $examCard['exam_number'], 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 665, 'NAMA PESERTA', $user->name, 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 640, 'EMAIL', $user->email ?? '-', 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 615, 'NOMOR HP', $user->phone_number ?? '-', 52, $headingColor, $textColor, 100, 114);
+        $stream[] = sprintf('%.3F %.3F %.3F rg 40 596 88 104 re f', $blueSoft[0], $blueSoft[1], $blueSoft[2]);
+        $stream[] = '0.78 0.84 0.93 RG 0.8 w 40 596 88 104 re S';
+        if ($profilePhoto !== null) {
+            $stream[] = $this->pdfImage('Im1', 40, 598, 88, 100);
+        } else {
+            $stream[] = $this->pdfText(57, 646, 'PAS FOTO', 12, true, $mutedColor);
+            $stream[] = $this->pdfLine(52, 640, 114, 640, $lineColor);
+        }
 
-        $stream[] = $this->pdfSectionHeader(34, 570, 'JADWAL UJI KOMPETENSI', $headingColor, $lineColor);
-        $stream[] = $this->pdfKeyValue(42, 542, 'NAMA UJIAN', $examCard['exam']->name, 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 517, 'HARI', $dayName, 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 492, 'TANGGAL', $dateLabel, 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 467, 'JAM', $timeLabel, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfSectionHeader(36, 720, 'DATA PESERTA', $headingColor, $lineColor);
+        $stream[] = $this->pdfKeyValue(148, 688, 'NOMOR UJIAN', $examCard['exam_number'], 39, $headingColor, $textColor, 102, 116);
+        $stream[] = $this->pdfKeyValue(148, 662, 'NAMA PESERTA', $user->name, 39, $headingColor, $textColor, 102, 116);
+        $stream[] = $this->pdfKeyValue(148, 636, 'EMAIL', $user->email ?? '-', 39, $headingColor, $textColor, 102, 116);
+        $stream[] = $this->pdfKeyValue(148, 610, 'NOMOR HP', $user->phone_number ?? '-', 39, $headingColor, $textColor, 102, 116);
 
-        $stream[] = $this->pdfSectionHeader(34, 422, 'LOKASI UJI KOMPETENSI', $headingColor, $lineColor);
-        $stream[] = $this->pdfKeyValue(42, 394, 'PUSAT UJI', self::EXAM_CENTER, 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 369, 'LOKASI', $locationLabel, 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 344, 'RUANG', $roomLabel, 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 319, 'NOMOR KURSI', (string) $examCard['seat_number'], 52, $headingColor, $textColor, 100, 114);
-        $stream[] = $this->pdfKeyValue(42, 294, 'ALAMAT', self::EXAM_ADDRESS, 52, $headingColor, $textColor, 100, 114);
+        $stream[] = $this->pdfSectionHeader(36, 562, 'JADWAL UJI KOMPETENSI', $headingColor, $lineColor);
+        $stream[] = $this->pdfKeyValue(42, 524, 'NAMA UJIAN', $examCard['exam']->name, 55, $headingColor, $textColor, 108, 124);
+        $stream[] = $this->pdfKeyValue(42, 500, 'HARI', $dayName, 55, $headingColor, $textColor, 108, 124);
+        $stream[] = $this->pdfKeyValue(42, 476, 'TANGGAL', $dateLabel, 55, $headingColor, $textColor, 108, 124);
+        $stream[] = $this->pdfKeyValue(42, 452, 'JAM', $timeLabel, 55, $headingColor, $textColor, 108, 124);
 
-        $stream[] = $this->pdfSectionHeader(34, 226, 'CATATAN PENTING', $headingColor, $lineColor);
-        $stream[] = $this->pdfBullet(48, 198, 'Peserta wajib hadir 60 menit sebelum ujian dimulai.', $mutedColor);
-        $stream[] = $this->pdfBullet(48, 180, 'Bawa kartu ujian ini dan identitas diri saat pelaksanaan ujian.', $mutedColor);
-        $stream[] = $this->pdfBullet(48, 162, 'Status peserta: TERVERIFIKASI DAN TERJADWAL.', $mutedColor);
+        $stream[] = $this->pdfSectionHeader(36, 414, 'LOKASI UJI KOMPETENSI', $headingColor, $lineColor);
+        $stream[] = $this->pdfKeyValue(42, 376, 'PUSAT UJI', self::EXAM_CENTER, 55, $headingColor, $textColor, 108, 124);
+        $stream[] = $this->pdfKeyValue(42, 352, 'LOKASI', $locationLabel, 55, $headingColor, $textColor, 108, 124);
+        $stream[] = $this->pdfKeyValue(42, 328, 'RUANG', $roomLabel, 55, $headingColor, $textColor, 108, 124);
+        $stream[] = $this->pdfKeyValue(42, 304, 'NOMOR KURSI', (string) $examCard['seat_number'], 55, $headingColor, $textColor, 108, 124);
+        $stream[] = $this->pdfKeyValue(42, 280, 'ALAMAT', self::EXAM_ADDRESS, 58, $headingColor, $textColor, 108, 124);
 
-        return $this->wrapPdfDocument(implode("\n", array_filter($stream)));
+        $stream[] = $this->pdfSectionHeader(36, 190, 'CATATAN PENTING', $headingColor, $lineColor);
+        $stream[] = $this->pdfBullet(50, 158, 'Peserta wajib hadir 60 menit sebelum ujian dimulai.', $mutedColor);
+        $stream[] = $this->pdfBullet(50, 140, 'Bawa kartu ujian ini dan identitas diri saat pelaksanaan ujian.', $mutedColor);
+        $stream[] = $this->pdfBullet(50, 122, 'Status peserta: TERVERIFIKASI DAN TERJADWAL.', $mutedColor);
+
+        return $this->wrapPdfDocument(implode("\n", array_filter($stream)), $profilePhoto);
     }
 
-    private function wrapPdfDocument(string $content): string
+    private function wrapPdfDocument(string $content, ?array $image = null): string
     {
         $objects = [
             1 => '<< /Type /Catalog /Pages 2 0 R >>',
             2 => '<< /Type /Pages /Kids [5 0 R] /Count 1 >>',
             3 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
             4 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
-            5 => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>',
+            5 => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>'
+                . ($image ? ' /XObject << /Im1 7 0 R >>' : '')
+                . ' >> /Contents 6 0 R >>',
             6 => '<< /Length ' . strlen($content) . " >>\nstream\n" . $content . "\nendstream",
         ];
+
+        if ($image !== null) {
+            $objects[7] = '<< /Type /XObject /Subtype /Image /Width ' . $image['width']
+                . ' /Height ' . $image['height']
+                . ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '
+                . strlen($image['data']) . " >>\nstream\n" . $image['data'] . "\nendstream";
+        }
 
         $pdf = "%PDF-1.4\n";
         $offsets = [0];
@@ -584,12 +607,12 @@ class UserDashboardController extends Controller
         $colonX = $x + $colonX;
         $valueX = $x + $valueX;
         $chunks = [
-            $this->pdfText($x, $y, $label, 12, true, $labelColor),
-            $this->pdfText($colonX, $y, ':', 12, true, $labelColor),
+            $this->pdfText($x, $y, $label, 10, true, $labelColor),
+            $this->pdfText($colonX, $y, ':', 10, true, $labelColor),
         ];
 
         foreach ($lines as $index => $line) {
-            $chunks[] = $this->pdfText($valueX, $y - ($index * 16), $line, 12, false, $valueColor);
+            $chunks[] = $this->pdfText($valueX, $y - ($index * 14), $line, 10, false, $valueColor);
         }
 
         return implode("\n", $chunks);
@@ -598,16 +621,16 @@ class UserDashboardController extends Controller
     private function pdfBullet(int $x, int $y, string $text, array $textColor = [0, 0, 0]): string
     {
         return implode("\n", [
-            $this->pdfText($x, $y, '- ', 12, true, $textColor),
-            $this->pdfText($x + 14, $y, $text, 11, false, $textColor),
+            $this->pdfText($x, $y, '- ', 10, true, $textColor),
+            $this->pdfText($x + 14, $y, $text, 9, false, $textColor),
         ]);
     }
 
     private function pdfSectionHeader(int $x, int $y, string $title, array $titleColor, array $lineColor): string
     {
         return implode("\n", [
-            $this->pdfText($x, $y, $title, 14, true, $titleColor),
-            $this->pdfLine($x, $y - 6, 541, $y - 6, $lineColor),
+            $this->pdfText($x, $y, $title, 13, true, $titleColor),
+            $this->pdfLine($x, $y - 8, 535, $y - 8, $lineColor),
         ]);
     }
 
@@ -631,6 +654,11 @@ class UserDashboardController extends Controller
             $y,
             $this->escapePdfText($text),
         );
+    }
+
+    private function pdfImage(string $imageName, int $x, int $y, int $width, int $height): string
+    {
+        return sprintf("q %d 0 0 %d %d %d cm /%s Do Q", $width, $height, $x, $y, $imageName);
     }
 
     private function expandExamDates(Exam $exam)
@@ -671,6 +699,86 @@ class UserDashboardController extends Controller
             ['\\\\', '\(', '\)', '', ' '],
             $text,
         );
+    }
+
+    private function resolveProfilePhotoForPdf(User $user): ?array
+    {
+        $photoPath = null;
+
+        $pasFoto = $user->documents()
+            ->where('document_type', 'pas_foto')
+            ->where('mime_type', 'like', 'image/%')
+            ->latest('uploaded_at')
+            ->first();
+
+        if ($pasFoto && Storage::disk('public')->exists($pasFoto->file_path)) {
+            $photoPath = Storage::disk('public')->path($pasFoto->file_path);
+        } elseif ($user->profile_photo) {
+            $profilePath = public_path(ltrim($user->profile_photo, '/'));
+
+            if (is_file($profilePath)) {
+                $photoPath = $profilePath;
+            }
+        }
+
+        if (! $photoPath || ! is_file($photoPath)) {
+            return null;
+        }
+
+        return $this->preparePdfImage($photoPath);
+    }
+
+    private function preparePdfImage(string $path): ?array
+    {
+        $imageInfo = @getimagesize($path);
+
+        if (! $imageInfo) {
+            return null;
+        }
+
+        [$width, $height, $type] = $imageInfo;
+
+        if ($type === IMAGETYPE_JPEG) {
+            $data = @file_get_contents($path);
+
+            return $data === false ? null : [
+                'width' => $width,
+                'height' => $height,
+                'data' => $data,
+            ];
+        }
+
+        if (! function_exists('imagecreatefrompng') || ! function_exists('imagejpeg')) {
+            return null;
+        }
+
+        $source = match ($type) {
+            IMAGETYPE_PNG => @imagecreatefrompng($path),
+            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($path) : false,
+            default => false,
+        };
+
+        if (! $source) {
+            return null;
+        }
+
+        $canvas = imagecreatetruecolor(imagesx($source), imagesy($source));
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefill($canvas, 0, 0, $white);
+        imagecopy($canvas, $source, 0, 0, 0, 0, imagesx($source), imagesy($source));
+
+        ob_start();
+        imagejpeg($canvas, null, 90);
+        $data = ob_get_clean();
+
+        imagedestroy($canvas);
+        imagedestroy($source);
+
+        return $data === false ? null : [
+            'width' => $width,
+            'height' => $height,
+            'data' => $data,
+        ];
     }
 
 }
