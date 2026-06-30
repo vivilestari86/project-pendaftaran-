@@ -11,7 +11,7 @@
     <div class="dash-content admin-crud">
         <div class="dash-header">
             <div>
-                <h1>CRUD Ruangan</h1>
+                <h1>Ruangan</h1>
                 <p>Kelola nama ruangan CBT dan kapasitas kursi untuk kebutuhan ujian penerimaan.</p>
             </div>
             <div class="dash-header-actions">

@@ -126,6 +126,12 @@
                                         $uploadedDocumentList = $uploadedDocuments->get($key, collect());
                                         $uploadedDocument = $uploadedDocumentList->first();
                                         $isMultiple = $document['multiple'] ?? false;
+                                        $acceptedExtensions = collect(explode(',', $document['mimes']))
+                                            ->map(fn (string $mime): string => '.' . trim($mime))
+                                            ->implode(',');
+                                        $acceptedLabel = collect(explode('/', $document['format']))
+                                            ->map(fn (string $format): string => trim($format))
+                                            ->implode(', ');
                                     @endphp
                                     <article
                                         class="document-card {{ ($document['wide'] ?? false) ? 'document-card-wide' : '' }}"
@@ -180,18 +186,19 @@
                                                 data-document-title="{{ $document['title'] }}"
                                                 data-multiple="{{ $isMultiple ? 'true' : 'false' }}"
                                                 data-max-files="{{ $document['max_files'] ?? '' }}"
+                                                data-accepted-files="{{ $acceptedExtensions }}"
                                             >
                                                 <input
                                                     class="dropzone-input"
                                                     type="file"
-                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                    accept="{{ $acceptedExtensions }}"
                                                     aria-label="Upload {{ $document['title'] }}"
                                                     @if ($isMultiple) multiple @endif
                                                 >
                                                 <div class="dropzone-message">
                                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v8h3l-4 4-4-4h3V5Zm-5 14h12v2H6v-2Z"/></svg>
                                                     <span>{{ $uploadedDocument ? ($isMultiple ? 'Tambah File' : 'Ganti File') : 'Upload File' }}</span>
-                                                    <small>PDF, JPG, PNG</small>
+                                                    <small>{{ $acceptedLabel }}</small>
                                                 </div>
                                             </div>
                                         @endunless
@@ -230,6 +237,12 @@
                                 $uploadedDocumentList = $uploadedDocuments->get($key, collect());
                                 $uploadedDocument = $uploadedDocumentList->first();
                                 $isMultiple = $document['multiple'] ?? false;
+                                $acceptedExtensions = collect(explode(',', $document['mimes']))
+                                    ->map(fn (string $mime): string => '.' . trim($mime))
+                                    ->implode(',');
+                                $acceptedLabel = collect(explode('/', $document['format']))
+                                    ->map(fn (string $format): string => trim($format))
+                                    ->implode(', ');
                             @endphp
                             <article
                                 class="document-card {{ ($document['wide'] ?? false) ? 'document-card-wide' : '' }}"
@@ -290,18 +303,19 @@
                                         data-document-title="{{ $document['title'] }}"
                                         data-multiple="{{ $isMultiple ? 'true' : 'false' }}"
                                         data-max-files="{{ $document['max_files'] ?? 1 }}"
+                                        data-accepted-files="{{ $acceptedExtensions }}"
                                     >
                                         <input
                                             class="dropzone-input"
                                             type="file"
-                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            accept="{{ $acceptedExtensions }}"
                                             aria-label="Upload {{ $document['title'] }}"
                                             @if ($isMultiple) multiple @endif
                                         >
                                         <div class="dropzone-message">
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v8h3l-4 4-4-4h3V5Zm-5 14h12v2H6v-2Z"/></svg>
                                             <span>{{ $uploadedDocument ? 'Ganti File' : 'Upload File' }}</span>
-                                            <small>PDF, JPG, PNG</small>
+                                            <small>{{ $acceptedLabel }}</small>
                                         </div>
                                     </div>
                                 @endunless
@@ -659,7 +673,7 @@
                 paramName: 'file',
                 maxFiles: 1,
                 maxFilesize: 5,
-                acceptedFiles: '.pdf,.jpg,.jpeg,.png',
+                acceptedFiles: dropzoneElement.dataset.acceptedFiles,
                 uploadMultiple: false,
                 disablePreviews: true,
                 clickable: true,

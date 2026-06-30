@@ -79,8 +79,8 @@ class UserDashboardController extends Controller
         'pas_foto' => [
             'title' => 'Pas Foto',
             'description' => 'Pas foto 4x6 terbaru dengan latar formal.',
-            'format' => 'PDF/JPG/PNG',
-            'mimes' => 'pdf,jpg,jpeg,png',
+            'format' => 'JPG/PNG',
+            'mimes' => 'jpg,jpeg,png',
             'tone' => 'olive',
             'icon' => 'camera',
             'wide' => true,

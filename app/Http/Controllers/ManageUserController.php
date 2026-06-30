@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserDocument;
 use App\Support\ProfessionRequirements;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
@@ -55,7 +56,9 @@ class ManageUserController extends Controller
     public function edit(User $manageUser)
     {
         $manageUser->load('documents');
-        $requiredDocuments = $this->requiredDocumentsFor($manageUser);
+        $generalDocuments = self::REQUIRED_DOCUMENTS;
+        $specialDocuments = ProfessionRequirements::labelsFor($manageUser->profesi);
+        $requiredDocuments = array_merge($generalDocuments, $specialDocuments);
 
         return view('admin.manage-user.edit', [
             'user' => $manageUser,
@@ -64,16 +67,20 @@ class ManageUserController extends Controller
             'isDocumentComplete' => $this->isDocumentComplete($manageUser),
             'isDocumentVerified' => $this->isDocumentVerified($manageUser),
             'profilePhotoUrl' => $this->profilePhotoUrl($manageUser),
-            'documentCategories' => collect($requiredDocuments)->map(function (string $label, string $type) use ($manageUser) {
-                return [
-                    'type' => $type,
-                    'label' => $label,
-                    'documents' => $manageUser->documents
-                        ->where('document_type', $type)
-                        ->sortBy('document_slot')
-                        ->values(),
-                ];
-            }),
+            'documentGroups' => [
+                [
+                    'title' => 'Persyaratan Umum',
+                    'description' => 'Dokumen utama yang wajib dicek untuk semua pendaftar.',
+                    'categories' => $this->documentCategories($manageUser, $generalDocuments),
+                ],
+                [
+                    'title' => 'Persyaratan Khusus',
+                    'description' => $specialDocuments === []
+                        ? 'Tidak ada persyaratan khusus untuk profesi ini.'
+                        : 'Dokumen tambahan sesuai profesi yang dipilih pendaftar.',
+                    'categories' => $this->documentCategories($manageUser, $specialDocuments),
+                ],
+            ],
         ]);
     }
 
@@ -207,6 +214,20 @@ class ManageUserController extends Controller
     private function requiredDocumentsFor(User $user): array
     {
         return array_merge(self::REQUIRED_DOCUMENTS, ProfessionRequirements::labelsFor($user->profesi));
+    }
+
+    private function documentCategories(User $user, array $documents): Collection
+    {
+        return collect($documents)->map(function (string $label, string $type) use ($user) {
+            return [
+                'type' => $type,
+                'label' => $label,
+                'documents' => $user->documents
+                    ->where('document_type', $type)
+                    ->sortBy('document_slot')
+                    ->values(),
+            ];
+        });
     }
 
     private function profilePhotoUrl(User $user): ?string

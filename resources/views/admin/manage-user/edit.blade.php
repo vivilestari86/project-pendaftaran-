@@ -194,33 +194,52 @@
         padding: 20px;
     }
 
+    .document-review-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .document-review-grid .files-card {
+        min-width: 0;
+    }
+
     .files-head {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 14px;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 6px;
     }
 
     .files-title {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 800;
-        color: #334155;
-        text-transform: uppercase;
-        letter-spacing: .5px;
+        color: var(--text-primary);
     }
 
-    .files-action {
-        color: #2563eb;
+    .files-description {
+        color: var(--text-muted);
         font-size: 12px;
-        font-weight: 700;
-        text-decoration: none;
+        line-height: 1.45;
+        margin-bottom: 14px;
+    }
+
+    .files-count {
+        border-radius: 999px;
+        padding: 4px 9px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
     }
 
     .file-list {
         display: flex;
         flex-direction: column;
         gap: 10px;
-        max-height: 520px;
+        max-height: 410px;
         overflow-y: auto;
         padding-right: 6px;
     }
@@ -266,6 +285,7 @@
         font-size: 12px;
         font-weight: 800;
         color: var(--text-primary);
+        line-height: 1.35;
     }
 
     .file-category-state {
@@ -316,6 +336,8 @@
         font-size: 12px;
         font-weight: 800;
         color: var(--text-primary);
+        line-height: 1.25;
+        word-break: break-word;
     }
 
     .file-meta {
@@ -556,6 +578,10 @@
             grid-template-columns: 1fr;
         }
 
+        .document-review-grid {
+            grid-template-columns: 1fr;
+        }
+
         .form-grid {
             grid-template-columns: 1fr;
         }
@@ -627,56 +653,6 @@
                 </div>
             </section>
 
-            <section class="files-card">
-                <div class="files-head">
-                    <div class="files-title">Scanned Files</div>
-                    <a class="files-action" href="{{ route('admin.manage-users.index') }}">Update All</a>
-                </div>
-
-                <div class="file-list">
-                    @foreach ($documentCategories as $category)
-                        <div class="file-category">
-                            <div class="file-category-head">
-                                <div class="file-category-title">{{ $category['label'] }}</div>
-                                <span class="file-category-state {{ $category['documents']->isNotEmpty() ? 'is-uploaded' : 'is-empty' }}">
-                                    {{ $category['documents']->isNotEmpty() ? 'Uploaded' : 'Belum Upload' }}
-                                </span>
-                            </div>
-
-                            @forelse ($category['documents'] as $document)
-                                <div class="file-item">
-                                    <div class="file-icon">
-                                        <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
-                                    </div>
-                                    <div>
-                                        <div class="file-name">{{ $document->original_name }}</div>
-                                        <div class="file-meta">
-                                            {{ number_format(($document->file_size ?: 0) / 1048576, 1) }} MB
-                                            - {{ strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION) ?: 'FILE') }}
-                                        </div>
-                                    </div>
-                                    <a class="file-view" href="{{ route('admin.manage-users.documents.show', [$user, $document]) }}" target="_blank" rel="noopener" title="Lihat file {{ $category['label'] }}">
-                                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </a>
-                                </div>
-                            @empty
-                                <div class="file-empty">
-                                    Belum ada file untuk kategori ini.
-                                </div>
-                            @endforelse
-                        </div>
-                    @endforeach
-
-                </div>
-
-                <form method="POST" action="{{ route('admin.manage-users.verify', $user) }}" class="verify-form">
-                    @csrf
-                    <button type="submit" class="verify-button {{ $isDocumentVerified ? 'is-complete' : '' }}" {{ (! $isDocumentComplete || $isDocumentVerified) ? 'disabled' : '' }}>
-                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-                        {{ $isDocumentVerified ? 'Sudah Terverifikasi' : ($isDocumentComplete ? 'Verifikasi' : 'Dokumen Belum Lengkap') }}
-                    </button>
-                </form>
-            </section>
         </aside>
 
         <div class="main-stack">
@@ -767,6 +743,74 @@
                     </div>
                 </form>
             </section>
+
+            <div class="document-review-grid">
+                @foreach ($documentGroups as $group)
+                    @php
+                        $uploadedGroupCount = $group['categories']
+                            ->filter(fn ($category) => $category['documents']->isNotEmpty())
+                            ->count();
+                        $groupTotal = $group['categories']->count();
+                    @endphp
+
+                    <section class="files-card">
+                        <div class="files-head">
+                            <div>
+                                <div class="files-title">{{ $group['title'] }}</div>
+                            </div>
+                            <span class="files-count">{{ $groupTotal > 0 ? $uploadedGroupCount . '/' . $groupTotal : '0 dokumen' }}</span>
+                        </div>
+                        <div class="files-description">{{ $group['description'] }}</div>
+
+                        <div class="file-list">
+                            @forelse ($group['categories'] as $category)
+                                <div class="file-category">
+                                    <div class="file-category-head">
+                                        <div class="file-category-title">{{ $category['label'] }}</div>
+                                        <span class="file-category-state {{ $category['documents']->isNotEmpty() ? 'is-uploaded' : 'is-empty' }}">
+                                            {{ $category['documents']->isNotEmpty() ? 'Uploaded' : 'Belum Upload' }}
+                                        </span>
+                                    </div>
+
+                                    @forelse ($category['documents'] as $document)
+                                        <div class="file-item">
+                                            <div class="file-icon">
+                                                <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                                            </div>
+                                            <div>
+                                                <div class="file-name">{{ $document->original_name }}</div>
+                                                <div class="file-meta">
+                                                    {{ number_format(($document->file_size ?: 0) / 1048576, 1) }} MB
+                                                    - {{ strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION) ?: 'FILE') }}
+                                                </div>
+                                            </div>
+                                            <a class="file-view" href="{{ route('admin.manage-users.documents.show', [$user, $document]) }}" target="_blank" rel="noopener" title="Lihat file {{ $category['label'] }}">
+                                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            </a>
+                                        </div>
+                                    @empty
+                                        <div class="file-empty">
+                                            Belum ada file untuk kategori ini.
+                                        </div>
+                                    @endforelse
+                                </div>
+                            @empty
+                                <div class="file-empty">
+                                    Tidak ada dokumen yang perlu ditinjau.
+                                </div>
+                            @endforelse
+                        </div>
+                    </section>
+                @endforeach
+            </div>
+
+            <form method="POST" action="{{ route('admin.manage-users.verify', $user) }}" class="verify-form">
+                @csrf
+                <button type="submit" class="verify-button {{ $isDocumentVerified ? 'is-complete' : '' }}" {{ (! $isDocumentComplete || $isDocumentVerified) ? 'disabled' : '' }}>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                    {{ $isDocumentVerified ? 'Sudah Terverifikasi' : ($isDocumentComplete ? 'Verifikasi Dokumen' : 'Dokumen Belum Lengkap') }}
+                </button>
+            </form>
 
             <section class="notice-card">
                 <div class="notice-icon">

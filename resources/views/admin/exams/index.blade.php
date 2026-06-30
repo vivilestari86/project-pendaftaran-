@@ -11,7 +11,7 @@
     <div class="dash-content admin-crud">
         <div class="dash-header">
             <div>
-                <h1>CRUD Ujian</h1>
+                <h1>Ujian</h1>
                 <p>Kelola range tanggal, sesi, dan pilihan ruangan untuk ujian penerimaan.</p>
             </div>
             <div class="dash-header-actions">

@@ -7,6 +7,7 @@ use App\Models\UserDocument;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class UserDocumentUploadTest extends TestCase
@@ -78,5 +79,34 @@ class UserDocumentUploadTest extends TestCase
                 ->where('document_type', 'ners_sertifikat_kompetensi')
                 ->count(),
         );
+    }
+
+    public function test_pas_foto_rejects_pdf_upload(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->activeUser()->create();
+
+        $this->withoutExceptionHandling();
+
+        try {
+            $this
+                ->actingAs($user)
+                ->postJson(route('user.documents.upload', 'pas_foto'), [
+                'file' => UploadedFile::fake()->create('pas-foto.pdf', 128, 'application/pdf'),
+            ]);
+        } catch (ValidationException $exception) {
+            $this->assertSame('Format dokumen tidak sesuai.', $exception->errors()['file'][0]);
+
+            $this->assertFalse(
+                UserDocument::where('user_id', $user->id)
+                    ->where('document_type', 'pas_foto')
+                    ->exists(),
+            );
+
+            return;
+        }
+
+        $this->fail('Pas foto PDF seharusnya ditolak.');
     }
 }

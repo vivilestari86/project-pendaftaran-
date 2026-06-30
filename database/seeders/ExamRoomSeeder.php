@@ -10,7 +10,7 @@ class ExamRoomSeeder extends Seeder
     public function run(): void
     {
         collect([
-            ['name' => 'CBT 1', 'capacity' => 65],
+            ['name' => 'CBT 1', 'capacity' => 60],
             ['name' => 'CBT 2', 'capacity' => 20],
             ['name' => 'CBT 3', 'capacity' => 20],
             ['name' => 'CBT 4', 'capacity' => 20],
